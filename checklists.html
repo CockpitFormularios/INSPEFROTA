@@ -11,13 +11,15 @@
 <body>
 
 <div class="loading-overlay" id="loadingOverlay">
-  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:28px; font-weight:800; letter-spacing:-1px;\'>INSPEFROTA</div><p style=\'color:#fff; font-weight:600; font-size:14px; margin-top:10px;\'>Carregando checklists...</p>';">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/Logo%20INSPEFROTA%20.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+  <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando checklists...</p>
 </div>
 
 <aside class="sidebar" id="sidebar">
   <div class="brand">
-    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:24px; font-weight:800; letter-spacing:-1px; text-align:center;\'>INSPEFROTA</div>';">
+    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/Logo%20INSPEFROTA%20.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+    <div style="display:none; color:#ffc93c; font-size:22px; font-weight:800; letter-spacing:-1px; text-align:center;">INSPEFROTA</div>
   </div>
   <div class="nav-label">Painel</div>
   <nav>
@@ -45,6 +47,7 @@
       <span>Crie modelos de verificação (Pneus, Freios, Luzes...)</span>
     </h2>
     <div class="topbar-actions">
+      <button class="btn btn-secondary" onclick="carregarModeloPronto()">📋 Modelo Pronto</button>
       <button class="btn btn-gold" onclick="abrirModal()">➕ Novo Checklist</button>
       <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
     </div>
@@ -55,13 +58,17 @@
     <div id="vazio" class="empty-state" style="display:none;">
       <div class="icon">📋</div>
       <h3>Nenhum checklist criado ainda</h3>
-      <p>Crie seu primeiro modelo de inspeção. Você pode fazer checklists de Pneus, Freios, Luzes, Motor etc.</p>
+      <p>Crie seu primeiro modelo de inspeção ou use o modelo pronto de inspeção veicular.</p>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap;">
+        <button class="btn btn-gold" onclick="carregarModeloPronto()">📋 Usar Modelo Pronto</button>
+        <button class="btn btn-primary" onclick="abrirModal()">➕ Criar do Zero</button>
+      </div>
     </div>
   </div>
 </main>
 
 <div class="modal-overlay" id="modalChecklist">
-  <div class="modal">
+  <div class="modal" style="max-width: 720px;">
     <div class="modal-header">
       <h3 id="modalTitle">Novo Checklist</h3>
       <button class="close-btn" onclick="fecharModal()">✕</button>
@@ -87,6 +94,7 @@
           <option value="Luzes">
           <option value="Motor">
           <option value="Segurança">
+          <option value="Documentação">
         </datalist>
       </div>
       <div class="form-group">
@@ -123,15 +131,22 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
   }
 
+  function esconderLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
   function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 
   async function verificarLogin() {
-    const { data: { session } } = await db.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; return false; }
-    const nome = session.user.email.split('@')[0];
-    document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
-    document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
-    return true;
+    try {
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) { window.location.href = 'index.html'; return false; }
+      const nome = session.user.email.split('@')[0];
+      document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
+      document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
+      return true;
+    } catch (e) { window.location.href = 'index.html'; return false; }
   }
 
   async function fazerLogout() {
@@ -141,38 +156,48 @@
   }
 
   async function carregarChecklists() {
-    const { data } = await db.from('veiculos_checklists').select('*').eq('ativo', true).order('created_at', { ascending: false });
-    checklists = data || [];
-    const lista = document.getElementById('listaChecklists');
-    const vazio = document.getElementById('vazio');
-    lista.innerHTML = '';
+    try {
+      const { data, error } = await db.from('veiculos_checklists').select('*').eq('ativo', true).order('created_at', { ascending: false });
+      if (error) {
+        mostrarToast('❌ ' + error.message, true);
+        esconderLoading();
+        return;
+      }
+      checklists = data || [];
+      const lista = document.getElementById('listaChecklists');
+      const vazio = document.getElementById('vazio');
+      lista.innerHTML = '';
 
-    if (checklists.length === 0) {
-      vazio.style.display = 'block';
-      setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
-      return;
+      if (checklists.length === 0) {
+        vazio.style.display = 'block';
+        esconderLoading();
+        return;
+      }
+      vazio.style.display = 'none';
+
+      checklists.forEach(c => {
+        const itens = Array.isArray(c.itens) ? c.itens.length : 0;
+        const card = document.createElement('div');
+        card.style.cssText = 'background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:18px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:0.22s;';
+        card.onmouseover = () => { card.style.borderColor = 'var(--green-600)'; card.style.transform = 'translateY(-2px)'; card.style.boxShadow = 'var(--shadow-md)'; };
+        card.onmouseout = () => { card.style.borderColor = 'var(--border)'; card.style.transform = 'translateY(0)'; card.style.boxShadow = 'none'; };
+        card.onclick = () => editarChecklist(c.id);
+        card.innerHTML = `
+          <div style="width:52px; height:52px; border-radius:14px; background: var(--green-100); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0;">📋</div>
+          <div style="flex:1;">
+            <h4 style="font-size:15px; font-weight:800; margin-bottom:4px;">${c.titulo}</h4>
+            <p style="font-size:12.5px; color:var(--text-soft);">${c.descricao || 'Sem descrição'}</p>
+          </div>
+          <span style="background: var(--green-100); color: var(--green-700); padding: 5px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 800;">${itens} itens</span>
+        `;
+        lista.appendChild(card);
+      });
+
+      esconderLoading();
+    } catch (err) {
+      console.error(err);
+      esconderLoading();
     }
-    vazio.style.display = 'none';
-
-    checklists.forEach(c => {
-      const itens = Array.isArray(c.itens) ? c.itens.length : 0;
-      const card = document.createElement('div');
-      card.style.cssText = 'background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:18px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:0.22s;';
-      card.onmouseover = () => { card.style.borderColor = 'var(--green-600)'; card.style.transform = 'translateY(-2px)'; card.style.boxShadow = 'var(--shadow-md)'; };
-      card.onmouseout = () => { card.style.borderColor = 'var(--border)'; card.style.transform = 'translateY(0)'; card.style.boxShadow = 'none'; };
-      card.onclick = () => editarChecklist(c.id);
-      card.innerHTML = `
-        <div style="width:52px; height:52px; border-radius:14px; background: var(--green-100); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0;">${c.icone || '📋'}</div>
-        <div style="flex:1;">
-          <h4 style="font-size:15px; font-weight:800; margin-bottom:4px;">${c.titulo}</h4>
-          <p style="font-size:12.5px; color:var(--text-soft);">${c.descricao || 'Sem descrição'}</p>
-        </div>
-        <span style="background: var(--green-100); color: var(--green-700); padding: 5px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 800;">${itens} itens</span>
-      `;
-      lista.appendChild(card);
-    });
-
-    setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
   }
 
   function abrirModal(c = null) {
@@ -200,8 +225,8 @@
     return 'item-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
   }
 
-  function adicionarItem() {
-    itensTemp.push({ id: gerarId(), pergunta: '' });
+  function adicionarItem(tipo = 'conforme') {
+    itensTemp.push({ id: gerarId(), pergunta: '', tipo: tipo });
     renderizarItens();
   }
 
@@ -210,9 +235,9 @@
     renderizarItens();
   }
 
-  function atualizarItem(id, valor) {
+  function atualizarItem(id, campo, valor) {
     const item = itensTemp.find(i => i.id === id);
-    if (item) item.pergunta = valor;
+    if (item) item[campo] = valor;
   }
 
   function renderizarItens() {
@@ -223,12 +248,27 @@
     }
     container.innerHTML = '';
     itensTemp.forEach((item, idx) => {
+      const tipo = item.tipo || 'conforme';
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex; gap:8px; align-items:center;';
+      row.style.cssText = 'display:flex; gap:8px; align-items:flex-start; padding:10px; background: var(--bg); border-radius:10px;';
+
+      const dicaTexto = tipo === 'texto'
+        ? `<div style="font-size:11px; color:var(--info); background:rgba(59,130,246,0.08); padding:5px 8px; border-radius:6px; border-left:3px solid var(--info); margin-top:6px;">💡 O inspetor vai digitar a resposta em caixa de texto livre.</div>`
+        : '';
+
       row.innerHTML = `
-        <div style="width:28px; height:28px; border-radius:50%; background: var(--green-600); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0;">${idx + 1}</div>
-        <input type="text" class="form-control" style="flex:1;" placeholder="Digite a pergunta..." value="${(item.pergunta || '').replace(/"/g, '&quot;')}" oninput="atualizarItem('${item.id}', this.value)">
-        <button class="btn btn-danger" style="padding: 8px 12px; flex-shrink:0;" onclick="removerItem('${item.id}')">✕</button>
+        <div style="width:28px; height:28px; border-radius:50%; background: var(--green-600); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; margin-top:4px;">${idx + 1}</div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+          <input type="text" class="form-control" placeholder="Digite a pergunta..." value="${(item.pergunta || '').replace(/"/g, '&quot;')}" oninput="atualizarItem('${item.id}', 'pergunta', this.value)">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <select class="form-control" style="flex:1; font-size:12.5px; padding:8px 10px;" onchange="atualizarItem('${item.id}', 'tipo', this.value); renderizarItens();">
+              <option value="conforme" ${tipo === 'conforme' ? 'selected' : ''}>✅ Conforme / Não Conforme</option>
+              <option value="texto" ${tipo === 'texto' ? 'selected' : ''}>📝 Texto livre (o inspetor escreve)</option>
+            </select>
+            <button class="btn btn-danger" style="padding: 8px 12px; flex-shrink:0;" onclick="removerItem('${item.id}')">✕</button>
+          </div>
+          ${dicaTexto}
+        </div>
       `;
       container.appendChild(row);
     });
@@ -248,7 +288,8 @@
 
     try {
       if (editandoId) {
-        await db.from('veiculos_checklists').update(dados).eq('id', editandoId);
+        const { error } = await db.from('veiculos_checklists').update(dados).eq('id', editandoId);
+        if (error) throw error;
         mostrarToast('✅ Checklist atualizado!');
       } else {
         const { error } = await db.from('veiculos_checklists').insert([dados]);
@@ -258,12 +299,62 @@
       fecharModal();
       await carregarChecklists();
     } catch (err) {
+      console.error(err);
       mostrarToast('❌ ' + err.message, true);
     }
   }
 
+  // ============================================================
+  // 📋 MODELO PRONTO DE INSPEÇÃO VEICULAR
+  // ============================================================
+  function carregarModeloPronto() {
+    const modelo = {
+      titulo: 'Inspeção Diária de Veículo',
+      descricao: 'Verificação completa de segurança e funcionamento do veículo',
+      categoria: 'Diária',
+      itens: [
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Pneus estão em bom estado (sem desgaste excessivo ou bolhas)?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Pressão dos pneus está correta (conforme manual)?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Estepe está presente e em boas condições?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Faróis dianteiros funcionam (alto e baixo)?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Lanternas traseiras e luz de freio funcionam?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Setas (pisca-pisca) funcionam corretamente?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Luz de ré funciona?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Óleo do motor está no nível correto?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Água do radiador está no nível correto?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Fluido de freio está no nível correto?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Palhetas do limpador de para-brisa estão em bom estado?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Freios funcionam corretamente (sem ruídos estranhos)?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Cinto de segurança está em bom estado e funcional?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Extintor de incêndio está presente e dentro da validade?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Documentação do veículo (CRLV) está em dia e no veículo?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Triângulo de sinalização está presente?' },
+        { id: gerarId(), tipo: 'conforme', pergunta: 'Macaco e chave de roda estão presentes?' },
+        { id: gerarId(), tipo: 'texto', pergunta: 'Observações gerais (avarias, ruídos, itens faltando, etc.):' }
+      ]
+    };
+
+    if (confirm('📋 Carregar o modelo pronto "Inspeção Diária de Veículo"?\n\nVocê poderá editar tudo antes de salvar.')) {
+      abrirModal();
+      document.getElementById('titulo').value = modelo.titulo;
+      document.getElementById('descricao').value = modelo.descricao;
+      document.getElementById('categoria').value = modelo.categoria;
+      itensTemp = modelo.itens;
+      renderizarItens();
+      mostrarToast('📋 Modelo pronto carregado! Edite e salve.');
+    }
+  }
+
   (async () => {
-    if (await verificarLogin()) await carregarChecklists();
+    try {
+      const logado = await verificarLogin();
+      if (!logado) return;
+      await carregarChecklists();
+    } catch (err) {
+      console.error(err);
+      esconderLoading();
+    }
+    setTimeout(esconderLoading, 5000);
   })();
 </script>
 </body>
