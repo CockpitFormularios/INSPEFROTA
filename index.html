@@ -5,7 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
+<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
+<!-- Configurações do App no Celular (PWA) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a1f13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INSPEFROTA">
+<link rel="apple-touch-icon" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
   body { background: linear-gradient(135deg, #0d2818 0%, #143d28 50%, #1e5f3f 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; overflow: hidden; }
@@ -49,7 +56,7 @@
 <div class="login-container">
   <div class="login-card">
     <div class="login-header">
-      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="logo-top" id="logoImg" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block';">
+      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="logo-top" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block';">
       <div class="logo-fallback" id="logoFallback">INSPEFROTA<small>INSPEÇÃO VEICULAR</small></div>
       <div class="login-badge">Painel de Frota</div>
     </div>
@@ -92,6 +99,7 @@
   const btn = document.getElementById('btnLogin');
   const btnText = document.getElementById('btnText');
 
+  // Se já estiver logado, vai direto pro dashboard
   (async () => {
     const { data: { session } } = await db.auth.getSession();
     if (session) window.location.href = 'dashboard.html';
@@ -118,5 +126,17 @@
     }
   });
 </script>
+
+<!-- Script para registrar o Service Worker (PWA) -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker registrado com sucesso!'))
+        .catch(err => console.log('Erro ao registrar Service Worker:', err));
+    });
+  }
+</script>
+
 </body>
 </html>
