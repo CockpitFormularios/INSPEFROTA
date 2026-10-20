@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login | Inspeção Veicular</title>
+<title>Login | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
 <style>
@@ -18,6 +18,8 @@
   .login-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #2e8b57, #ffc93c, #2e8b57); }
   .login-header { text-align: center; margin-bottom: 28px; }
   .logo-top { display: block; width: 100%; max-width: 340px; height: auto; margin: 0 auto 22px; object-fit: contain; }
+  .logo-fallback { display: none; font-size: 42px; font-weight: 800; color: #1e5f3f; letter-spacing: -1.5px; margin-bottom: 22px; text-align: center; }
+  .logo-fallback small { display: block; font-size: 11px; color: #2e8b57; font-weight: 700; letter-spacing: 3px; margin-top: 4px; }
   .login-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: linear-gradient(135deg, rgba(46,139,87,0.1), rgba(63,184,120,0.15)); border-radius: 30px; font-size: 11.5px; font-weight: 700; color: #1e5f3f; text-transform: uppercase; letter-spacing: 0.8px; }
   .login-badge::before { content: '🚗'; }
   .form-group { margin-bottom: 18px; }
@@ -47,7 +49,8 @@
 <div class="login-container">
   <div class="login-card">
     <div class="login-header">
-      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-cipa-ativa.png" alt="CIPA Ativa" class="logo-top">
+      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="logo-top" id="logoImg" onerror="this.style.display='none'; document.getElementById('logoFallback').style.display='block';">
+      <div class="logo-fallback" id="logoFallback">INSPEFROTA<small>INSPEÇÃO VEICULAR</small></div>
       <div class="login-badge">Painel de Frota</div>
     </div>
 
@@ -73,7 +76,7 @@
     <div class="divider">OU</div>
     <div class="footer-note">
       <p>Acesso restrito ao <strong>Gestor de Frota</strong></p>
-      <a href="checklistsCIPEIROS.html">Ir para a Área do Inspetor →</a>
+      <a href="inspetor.html">Ir para a Área do Inspetor →</a>
     </div>
   </div>
 </div>
