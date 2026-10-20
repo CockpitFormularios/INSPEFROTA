@@ -7,6 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 <link rel="stylesheet" href="style.css">
+<!-- Biblioteca para gerar o QR Code -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -51,12 +53,13 @@
     </h2>
     <div class="topbar-actions">
       <button class="btn btn-secondary" onclick="carregarDados()">🔄 Atualizar</button>
-      <button class="btn btn-gold" onclick="window.open('inspetor.html', '_blank')">➕ Nova Inspeção (Inspetor)</button>
+      <button class="btn btn-primary" onclick="abrirModalQRCode()">📱 QR Code do Inspetor</button>
+      <button class="btn btn-gold" onclick="window.open('inspetor.html', '_blank')">➕ Nova Inspeção (Abrir Tela)</button>
       <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
     </div>
   </div>
 
-  <!-- CARD REMOVIDO AQUI -->
+  <!-- CARD REMOVIDO CONFORME SOLICITADO ANTERIORMENTE -->
 
   <section class="kpis">
     <div class="kpi" onclick="window.location.href='veiculos.html'">
@@ -115,6 +118,32 @@
   </section>
 </main>
 
+<!-- MODAL DO QR CODE -->
+<div class="modal-overlay" id="modalQRCode">
+  <div class="modal" style="max-width: 480px;">
+    <div class="modal-header">
+      <h3 style="display:flex; align-items:center; gap:8px;">📱 QR Code do Inspetor</h3>
+      <button class="close-btn" onclick="fecharModalQRCode()">✕</button>
+    </div>
+    <div class="modal-body" style="text-align: center;">
+      <p style="font-size: 13.5px; color: var(--text-soft); margin-bottom: 20px; line-height: 1.5;">
+        Aponte a câmera do celular para o QR Code abaixo para abrir a tela de inspeção. <br><strong>Não é necessário fazer login.</strong>
+      </p>
+      
+      <!-- Container onde o QR Code será desenhado -->
+      <div id="qrcode" style="display: inline-block; padding: 16px; background: #fff; border-radius: 12px; border: 1.5px solid var(--border); box-shadow: var(--shadow-sm);"></div>
+      
+      <div style="margin-top: 24px; background: var(--bg); padding: 14px; border-radius: 10px; font-size: 12px; color: var(--text-soft); word-break: break-all;">
+        Link: <strong id="linkInspetorTexto">—</strong>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModalQRCode()">Fechar</button>
+      <button class="btn btn-gold" onclick="baixarQRCode()">📥 Baixar Imagem do QR</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -124,6 +153,8 @@
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let toastTimer;
+  let qrCodeObj = null; // Variável global para armazenar a instância do QR Code
+
   function mostrarToast(msg, tipo = '') {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -160,30 +191,92 @@
     window.location.href = 'index.html';
   }
 
+  // ============================================================
+  // 📱 FUNÇÕES DO QR CODE
+  // ============================================================
+  function abrirModalQRCode() {
+    const modal = document.getElementById('modalQRCode');
+    modal.classList.add('open');
+    
+    // Descobre a URL base do site dinamicamente (ex: https://site.com/inspetor.html)
+    const urlInspetor = window.location.origin + window.location.pathname.replace('dashboard.html', '') + 'inspetor.html';
+    document.getElementById('linkInspetorTexto').textContent = urlInspetor;
+
+    // Limpa o container e gera um novo QR Code
+    const container = document.getElementById('qrcode');
+    container.innerHTML = '';
+    
+    // Cria o QR Code com as configurações visuais
+    qrCodeObj = new QRCode(container, {
+      text: urlInspetor,
+      width: 220,
+      height: 220,
+      colorDark: "#0a1f13", // Cor do fundo escuro do padrão
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H // Alta correção de erro (se riscar, ainda funciona)
+    });
+  }
+
+  function fecharModalQRCode() {
+    document.getElementById('modalQRCode').classList.remove('open');
+  }
+
+  function baixarQRCode() {
+    if (!qrCodeObj) return;
+    
+    // O QRCode.js gera um <canvas> ou <img> dentro do container. Vamos procurar por ele.
+    const canvas = document.querySelector('#qrcode canvas');
+    const img = document.querySelector('#qrcode img');
+    
+    let urlData = '';
+    if (canvas) {
+      urlData = canvas.toDataURL("image/png");
+    } else if (img) {
+      urlData = img.src;
+    }
+
+    if (!urlData) {
+      mostrarToast('❌ Erro ao gerar imagem do QR Code.', 'error');
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = urlData;
+    link.download = `qrcode-inspetor-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    mostrarToast('📥 QR Code baixado! Imprima e cole no pátio.');
+  }
+
+  // Fecha o modal se clicar fora dele
+  document.getElementById('modalQRCode').addEventListener('click', e => {
+    if (e.target.id === 'modalQRCode') fecharModalQRCode();
+  });
+
+  // ============================================================
+  // 📊 CARREGAMENTO DE DADOS DO DASHBOARD
+  // ============================================================
   async function carregarDados() {
     try {
-      // 1. Veículos
       const { count: cVeiculos } = await db.from('veiculos').select('*', { count: 'exact', head: true }).eq('ativo', true);
       document.getElementById('kpiVeiculos').textContent = cVeiculos || 0;
       document.getElementById('kpiVeiculosTrend').textContent = cVeiculos > 0 ? `✅ ${cVeiculos} ativos` : '⚠️ Nenhum cadastrado';
 
-      // 2. Checklists
       const { count: cChecklists } = await db.from('veiculos_checklists').select('*', { count: 'exact', head: true }).eq('ativo', true);
       document.getElementById('kpiChecklists').textContent = cChecklists || 0;
       document.getElementById('kpiChecklistsTrend').textContent = cChecklists > 0 ? `📋 ${cChecklists} modelo${cChecklists > 1 ? 's' : ''}` : '⚠️ Nenhum criado';
 
-      // 3. Inspeções
       const { count: cInspecoes } = await db.from('veiculos_inspecoes').select('*', { count: 'exact', head: true });
       document.getElementById('kpiInspecoes').textContent = cInspecoes || 0;
       document.getElementById('kpiInspecoesTrend').textContent = cInspecoes > 0 ? `✅ ${cInspecoes} realizadas` : '📭 Nenhuma ainda';
 
-      // 4. Não Conformidades
       const { data: insp } = await db.from('veiculos_inspecoes').select('total_nao_conformes');
       const totalNC = (insp || []).reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
       document.getElementById('kpiNC').textContent = totalNC;
       document.getElementById('kpiNCTrend').textContent = totalNC > 0 ? '⚠️ Atenção necessária' : '✅ Tudo em ordem';
 
-      // Últimas 5 inspeções
       if (cInspecoes > 0) {
         const { data: ultimas } = await db.from('veiculos_inspecoes').select('*').order('created_at', { ascending: false }).limit(5);
         if (ultimas && ultimas.length > 0) {
