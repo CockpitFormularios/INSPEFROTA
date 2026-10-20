@@ -11,13 +11,15 @@
 <body>
 
 <div class="loading-overlay" id="loadingOverlay">
-  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:28px; font-weight:800; letter-spacing:-1px;\'>INSPEFROTA</div><p style=\'color:#fff; font-weight:600; font-size:14px; margin-top:10px;\'>Carregando frota...</p>';">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/Logo%20INSPEFROTA%20.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+  <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando frota...</p>
 </div>
 
 <aside class="sidebar" id="sidebar">
   <div class="brand">
-    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:24px; font-weight:800; letter-spacing:-1px; text-align:center;\'>INSPEFROTA</div>';">
+    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/Logo%20INSPEFROTA%20.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+    <div style="display:none; color:#ffc93c; font-size:22px; font-weight:800; letter-spacing:-1px; text-align:center;">INSPEFROTA</div>
   </div>
   <div class="nav-label">Painel</div>
   <nav>
@@ -52,7 +54,7 @@
 
   <div class="card" style="background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(46,139,87,0.06)); border-left: 4px solid var(--green-600); padding: 18px 22px; margin-bottom: 24px;">
     <p style="font-size: 13px; color: var(--text-soft); line-height: 1.6;">
-      💡 <strong style="color: var(--green-700);">Dica:</strong> Ao cadastrar um veículo aqui, ele aparecerá automaticamente na tela do inspetor em <code style="background:#fff;padding:2px 6px;border-radius:4px;font-size:12px;">inspetor.html</code> para ser selecionado.
+      💡 <strong style="color: var(--green-700);">Dica:</strong> Ao cadastrar um veículo aqui, ele aparecerá automaticamente na tela do inspetor em <code style="background:#fff;padding:2px 6px;border-radius:4px;font-size:12px;">inspetor.html</code>.
     </p>
   </div>
 
@@ -128,15 +130,26 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
   }
 
+  function esconderLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
   function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 
   async function verificarLogin() {
-    const { data: { session } } = await db.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; return false; }
-    const nome = session.user.email.split('@')[0];
-    document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
-    document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
-    return true;
+    try {
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) { window.location.href = 'index.html'; return false; }
+      const nome = session.user.email.split('@')[0];
+      document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
+      document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
+      return true;
+    } catch (e) {
+      console.error('Erro login:', e);
+      window.location.href = 'index.html';
+      return false;
+    }
   }
 
   async function fazerLogout() {
@@ -151,37 +164,51 @@
   }
 
   async function carregarVeiculos() {
-    const { data } = await db.from('veiculos').select('*').eq('ativo', true).order('placa');
-    veiculos = data || [];
-    const grid = document.getElementById('gridVeiculos');
-    grid.innerHTML = '';
+    try {
+      const { data, error } = await db.from('veiculos').select('*').eq('ativo', true).order('placa');
 
-    if (veiculos.length === 0) {
-      grid.innerHTML = `
-        <div class="empty-state" style="grid-column: 1/-1;">
-          <div class="icon">🚗</div>
-          <h3>Nenhum veículo cadastrado</h3>
-          <p>Clique em "Novo Veículo" para cadastrar a primeira placa da frota.</p>
-        </div>
-      `;
-      setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
-      return;
+      if (error) {
+        console.error('Erro ao carregar veículos:', error);
+        mostrarToast('❌ Erro ao carregar: ' + error.message, true);
+        esconderLoading();
+        return;
+      }
+
+      veiculos = data || [];
+      const grid = document.getElementById('gridVeiculos');
+      grid.innerHTML = '';
+
+      if (veiculos.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column: 1/-1;">
+            <div class="icon">🚗</div>
+            <h3>Nenhum veículo cadastrado</h3>
+            <p>Clique em "Novo Veículo" para cadastrar a primeira placa da frota.</p>
+          </div>
+        `;
+        esconderLoading();
+        return;
+      }
+
+      veiculos.forEach(v => {
+        const card = document.createElement('div');
+        card.className = 'veiculo-card';
+        card.onclick = () => editarVeiculo(v.id);
+        card.innerHTML = `
+          <div class="veiculo-icon-wrap">${iconeTipo(v.tipo)}</div>
+          <div class="veiculo-placa">${v.placa}</div>
+          <div class="veiculo-modelo">${v.marca} ${v.modelo} ${v.ano ? '(' + v.ano + ')' : ''}</div>
+          <span class="veiculo-badge">${v.tipo || 'Carro'} • ${v.setor || 'Geral'}</span>
+        `;
+        grid.appendChild(card);
+      });
+
+      esconderLoading();
+    } catch (err) {
+      console.error('Erro geral:', err);
+      mostrarToast('❌ Erro inesperado', true);
+      esconderLoading();
     }
-
-    veiculos.forEach(v => {
-      const card = document.createElement('div');
-      card.className = 'veiculo-card';
-      card.onclick = () => editarVeiculo(v.id);
-      card.innerHTML = `
-        <div class="veiculo-icon-wrap">${iconeTipo(v.tipo)}</div>
-        <div class="veiculo-placa">${v.placa}</div>
-        <div class="veiculo-modelo">${v.marca} ${v.modelo} ${v.ano ? '(' + v.ano + ')' : ''}</div>
-        <span class="veiculo-badge">${v.tipo || 'Carro'} • ${v.setor || 'Geral'}</span>
-      `;
-      grid.appendChild(card);
-    });
-
-    setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
   }
 
   function abrirModal(v = null) {
@@ -223,7 +250,8 @@
 
     try {
       if (editandoId) {
-        await db.from('veiculos').update(dados).eq('id', editandoId);
+        const { error } = await db.from('veiculos').update(dados).eq('id', editandoId);
+        if (error) throw error;
         mostrarToast('✅ Veículo atualizado!');
       } else {
         const { error } = await db.from('veiculos').insert([dados]);
@@ -233,6 +261,7 @@
       fecharModal();
       await carregarVeiculos();
     } catch (err) {
+      console.error('Erro salvar:', err);
       mostrarToast('❌ ' + err.message, true);
     }
   }
@@ -241,8 +270,18 @@
     e.target.value = e.target.value.toUpperCase();
   });
 
+  // ✅ INICIALIZAÇÃO COM PROTEÇÃO TOTAL
   (async () => {
-    if (await verificarLogin()) await carregarVeiculos();
+    try {
+      const logado = await verificarLogin();
+      if (!logado) return;
+      await carregarVeiculos();
+    } catch (err) {
+      console.error('Erro init:', err);
+      esconderLoading();
+    }
+    // ✅ Fallback: força esconder loading após 5 segundos (caso algo trave)
+    setTimeout(esconderLoading, 5000);
   })();
 </script>
 </body>
