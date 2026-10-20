@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login | Inspeção Veicular</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+  body { background: linear-gradient(135deg, #0d2818 0%, #143d28 50%, #1e5f3f 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; overflow: hidden; }
+  body::before { content: ''; position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(255,201,60,0.08) 0%, transparent 70%); top: -200px; right: -200px; border-radius: 50%; animation: float-bg 12s ease-in-out infinite; }
+  body::after { content: ''; position: absolute; width: 500px; height: 500px; background: radial-gradient(circle, rgba(63,184,120,0.1) 0%, transparent 70%); bottom: -150px; left: -150px; border-radius: 50%; animation: float-bg 15s ease-in-out infinite reverse; }
+  @keyframes float-bg { 0%,100% { transform: translate(0,0); } 50% { transform: translate(30px,-30px); } }
+  .login-container { width: 100%; max-width: 500px; position: relative; z-index: 2; animation: fadeUp 0.6s cubic-bezier(0.4,0,0.2,1); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  .login-card { background: rgba(255,255,255,0.98); border-radius: 24px; padding: 36px 32px 28px; box-shadow: 0 30px 60px -15px rgba(0,0,0,0.5); position: relative; overflow: hidden; }
+  .login-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: linear-gradient(90deg, #2e8b57, #ffc93c, #2e8b57); }
+  .login-header { text-align: center; margin-bottom: 28px; }
+  .logo-top { display: block; width: 100%; max-width: 340px; height: auto; margin: 0 auto 22px; object-fit: contain; }
+  .login-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: linear-gradient(135deg, rgba(46,139,87,0.1), rgba(63,184,120,0.15)); border-radius: 30px; font-size: 11.5px; font-weight: 700; color: #1e5f3f; text-transform: uppercase; letter-spacing: 0.8px; }
+  .login-badge::before { content: '🚗'; }
+  .form-group { margin-bottom: 18px; }
+  .form-group label { display: block; font-size: 12.5px; font-weight: 600; color: #0f172a; margin-bottom: 8px; }
+  .input-wrapper { position: relative; }
+  .input-wrapper input { width: 100%; padding: 14px 16px 14px 44px; font-size: 14px; font-family: inherit; border: 1.5px solid #e2e8f0; border-radius: 12px; outline: none; transition: all 0.2s; background: #fafbfc; color: #0f172a; }
+  .input-wrapper input:focus { border-color: #2e8b57; background: #fff; box-shadow: 0 0 0 4px rgba(46,139,87,0.1); }
+  .input-wrapper .icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 16px; color: #94a3b8; }
+  .btn-login { width: 100%; padding: 14px; font-size: 15px; font-weight: 700; font-family: inherit; color: #0d2818; background: linear-gradient(135deg, #ffc93c, #e8b324); border: none; border-radius: 12px; cursor: pointer; transition: all 0.25s; box-shadow: 0 6px 20px rgba(255,201,60,0.35); display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 8px; letter-spacing: 0.5px; }
+  .btn-login:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(255,201,60,0.5); }
+  .btn-login:disabled { opacity: 0.7; cursor: not-allowed; }
+  .message { padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; text-align: center; margin-top: 16px; display: none; }
+  .message.show { display: block; }
+  .message.error { background: #fee2e2; color: #b91c1c; }
+  .divider { display: flex; align-items: center; gap: 10px; margin: 22px 0 16px; color: #cbd5e1; font-size: 10px; font-weight: 700; letter-spacing: 1px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e5eaf0; }
+  .footer-note { text-align: center; line-height: 1.6; }
+  .footer-note p { font-size: 11.5px; color: #94a3b8; }
+  .footer-note strong { color: #2e8b57; font-weight: 700; }
+  .footer-note a { color: #2e8b57; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; transition: all 0.2s; margin-top: 8px; }
+  .footer-note a:hover { text-decoration: underline; }
+  @media (max-width: 480px) { .login-card { padding: 32px 22px 24px; } .logo-top { max-width: 260px; } }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-cipa-ativa.png" alt="CIPA Ativa" class="logo-top">
+      <div class="login-badge">Painel de Frota</div>
+    </div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label>E-mail</label>
+        <div class="input-wrapper">
+          <span class="icon">📧</span>
+          <input type="email" id="email" placeholder="seu@email.com" required autocomplete="email">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <div class="input-wrapper">
+          <span class="icon">🔒</span>
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+      </div>
+      <button type="submit" class="btn-login" id="btnLogin"><span id="btnText">ENTRAR</span></button>
+      <div class="message" id="message"></div>
+    </form>
+
+    <div class="divider">OU</div>
+    <div class="footer-note">
+      <p>Acesso restrito ao <strong>Gestor de Frota</strong></p>
+      <a href="checklistsCIPEIROS.html">Ir para a Área do Inspetor →</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://rvtquhqeivrhcdoreghu.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_kNF6eX_67yzNGWIyjwZvOw_0__qWSMW';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const form = document.getElementById('loginForm');
+  const msg = document.getElementById('message');
+  const btn = document.getElementById('btnLogin');
+  const btnText = document.getElementById('btnText');
+
+  (async () => {
+    const { data: { session } } = await db.auth.getSession();
+    if (session) window.location.href = 'dashboard.html';
+  })();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true;
+    btnText.textContent = '⏳ Entrando...';
+    msg.style.display = 'none';
+
+    const { error } = await db.auth.signInWithPassword({
+      email: document.getElementById('email').value.trim(),
+      password: document.getElementById('password').value
+    });
+
+    if (error) {
+      msg.textContent = '❌ E-mail ou senha incorretos';
+      msg.className = 'message show error';
+      btn.disabled = false;
+      btnText.textContent = 'ENTRAR';
+    } else {
+      window.location.href = 'dashboard.html';
+    }
+  });
+</script>
+</body>
+</html>

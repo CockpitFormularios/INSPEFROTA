@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard | Inspeção Veicular</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" alt="Logo" class="loading-logo">
+  <p style="font-weight:600; font-size:14px;">Carregando painel...</p>
+</div>
+
+<aside class="sidebar">
+  <div class="brand">
+    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-cipa-ativa.png" alt="Logo" class="brand-logo">
+  </div>
+  <div class="nav-label">Painel</div>
+  <nav>
+    <a class="active"><span class="icon">📊</span> Dashboard</a>
+    <a href="veiculos.html"><span class="icon">🚗</span> Veículos</a>
+  </nav>
+  <div class="nav-label">Inspeções</div>
+  <nav>
+    <a href="inspecoes.html"><span class="icon">🔍</span> Ver Inspeções</a>
+    <a href="checklists.html"><span class="icon">📋</span> Checklists</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar-sm" id="userAvatar">?</div>
+    <div class="info">
+      <strong id="userName">—</strong>
+      <small>Gestor de Frota</small>
+    </div>
+    <button class="btn-logout" onclick="fazerLogout()" title="Sair">🚪</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <h2>Painel de Inspeção Veicular
+      <span id="saudacao">Bem-vindo ao centro de comando da frota.</span>
+    </h2>
+    <div class="topbar-actions">
+      <button class="btn btn-gold" onclick="window.location.href='checklistsCIPEIROS.html'">➕ Nova Inspeção</button>
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+    </div>
+  </div>
+
+  <div class="gestao-card">
+    <div class="gestao-card-info">
+      <div class="gestao-card-icon">🚗</div>
+      <div class="gestao-card-text">
+        <h3>
+          Frota Ativa
+          <span class="gestao-card-badge">SISTEMA ONLINE</span>
+        </h3>
+        <p>Controle total das inspeções veiculares</p>
+      </div>
+    </div>
+    <div class="gestao-card-actions">
+      <button class="btn-ghost" onclick="window.location.href='veiculos.html'">🚗 Gerenciar Veículos</button>
+    </div>
+  </div>
+
+  <section class="kpis">
+    <div class="kpi" onclick="window.location.href='veiculos.html'">
+      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" class="kpi-bg-icon" alt="">
+      <div class="kpi-header"><div class="kpi-icon">🚗</div></div>
+      <div class="kpi-value" id="kpiVeiculos"><span class="skeleton"></span></div>
+      <div class="kpi-label">Veículos Cadastrados</div>
+      <span class="kpi-trend" id="kpiVeiculosTrend">Carregando...</span>
+    </div>
+
+    <div class="kpi info" onclick="window.location.href='checklists.html'">
+      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" class="kpi-bg-icon" alt="">
+      <div class="kpi-header"><div class="kpi-icon">📋</div></div>
+      <div class="kpi-value" id="kpiChecklists"><span class="skeleton"></span></div>
+      <div class="kpi-label">Checklists Disponíveis</div>
+      <span class="kpi-trend" id="kpiChecklistsTrend">Carregando...</span>
+    </div>
+
+    <div class="kpi warn" onclick="window.location.href='inspecoes.html'">
+      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" class="kpi-bg-icon" alt="">
+      <div class="kpi-header"><div class="kpi-icon">🔍</div></div>
+      <div class="kpi-value" id="kpiInspecoes"><span class="skeleton"></span></div>
+      <div class="kpi-label">Inspeções Realizadas</div>
+      <span class="kpi-trend" id="kpiInspecoesTrend">Carregando...</span>
+    </div>
+
+    <div class="kpi danger" onclick="window.location.href='inspecoes.html'">
+      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" class="kpi-bg-icon" alt="">
+      <div class="kpi-header"><div class="kpi-icon">⚠️</div></div>
+      <div class="kpi-value" id="kpiNC"><span class="skeleton"></span></div>
+      <div class="kpi-label">Não Conformidades</div>
+      <span class="kpi-trend" id="kpiNCTrend">Carregando...</span>
+    </div>
+  </section>
+
+  <div class="grid-3">
+    <div class="atalho-card" onclick="window.location.href='veiculos.html'">
+      <div class="atalho-icon veiculos">🚗</div>
+      <div class="atalho-info">
+        <h4>Veículos</h4>
+        <p>Cadastrar e gerenciar a frota</p>
+      </div>
+    </div>
+    <div class="atalho-card" onclick="window.location.href='checklists.html'">
+      <div class="atalho-icon checklists">📋</div>
+      <div class="atalho-info">
+        <h4>Checklists</h4>
+        <p>Criar modelos de inspeção</p>
+      </div>
+    </div>
+    <div class="atalho-card" onclick="window.location.href='inspecoes.html'">
+      <div class="atalho-icon inspecoes">🔍</div>
+      <div class="atalho-info">
+        <h4>Ver Inspeções</h4>
+        <p>Histórico completo com PDF</p>
+      </div>
+    </div>
+  </div>
+
+  <section id="secaoInspecoes" style="display:none;">
+    <div class="card">
+      <div class="card-header">
+        <h3>🔍 Últimas Inspeções</h3>
+        <a onclick="window.location.href='inspecoes.html'">Ver todas →</a>
+      </div>
+      <ul style="list-style: none;" id="listaInspecoes"></ul>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://rvtquhqeivrhcdoreghu.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_kNF6eX_67yzNGWIyjwZvOw_0__qWSMW';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let toastTimer;
+  function mostrarToast(msg, tipo = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + tipo;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+  async function verificarLogin() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return false; }
+    const nome = session.user.email.split('@')[0];
+    document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
+    document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
+    document.getElementById('saudacao').textContent = `Olá, ${nome.charAt(0).toUpperCase() + nome.slice(1)}! Aqui está o resumo.`;
+    return true;
+  }
+
+  async function fazerLogout() {
+    if (!confirm('Deseja sair do sistema?')) return;
+    await db.auth.signOut();
+    window.location.href = 'index.html';
+  }
+
+  async function carregarDados() {
+    try {
+      const { count: cVeiculos } = await db.from('veiculos').select('*', { count: 'exact', head: true }).eq('ativo', true);
+      document.getElementById('kpiVeiculos').textContent = cVeiculos || 0;
+      document.getElementById('kpiVeiculosTrend').textContent = cVeiculos > 0 ? `✅ ${cVeiculos} ativos` : '⚠️ Nenhum cadastrado';
+
+      const { count: cChecklists } = await db.from('veiculos_checklists').select('*', { count: 'exact', head: true }).eq('ativo', true);
+      document.getElementById('kpiChecklists').textContent = cChecklists || 0;
+      document.getElementById('kpiChecklistsTrend').textContent = cChecklists > 0 ? `📋 ${cChecklists} modelo${cChecklists > 1 ? 's' : ''}` : '⚠️ Nenhum criado';
+
+      const { count: cInspecoes } = await db.from('veiculos_inspecoes').select('*', { count: 'exact', head: true });
+      document.getElementById('kpiInspecoes').textContent = cInspecoes || 0;
+      document.getElementById('kpiInspecoesTrend').textContent = cInspecoes > 0 ? `✅ ${cInspecoes} realizadas` : '📭 Nenhuma ainda';
+
+      const { data: insp } = await db.from('veiculos_inspecoes').select('total_nao_conformes');
+      const totalNC = (insp || []).reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
+      document.getElementById('kpiNC').textContent = totalNC;
+      document.getElementById('kpiNCTrend').textContent = totalNC > 0 ? '⚠️ Atenção necessária' : '✅ Tudo em ordem';
+
+      if (cInspecoes > 0) {
+        const { data: ultimas } = await db.from('veiculos_inspecoes').select('*').order('created_at', { ascending: false }).limit(5);
+        if (ultimas && ultimas.length > 0) {
+          document.getElementById('secaoInspecoes').style.display = 'block';
+          const lista = document.getElementById('listaInspecoes');
+          lista.innerHTML = '';
+          ultimas.forEach(i => {
+            const pct = parseFloat(i.percentual_conformidade) || 0;
+            const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
+            const li = document.createElement('li');
+            li.style.cssText = 'display:flex; align-items:center; gap:14px; padding: 14px 0; border-bottom: 1px solid var(--border); cursor:pointer;';
+            li.onclick = () => window.location.href = 'inspecoes.html';
+            li.onmouseover = () => li.style.paddingLeft = '6px';
+            li.onmouseout = () => li.style.paddingLeft = '0';
+            li.innerHTML = `
+              <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--green-500),var(--green-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;">${(i.veiculo_placa || 'XX').substring(0,2).toUpperCase()}</div>
+              <div style="flex:1;min-width:0;">
+                <strong style="display:block;font-size:13.5px;font-weight:700;margin-bottom:2px;">${i.veiculo_placa} - ${i.veiculo_modelo}</strong>
+                <small style="color:var(--text-soft);font-size:11.5px;">${i.checklist_titulo} • ${i.inspetor_nome} • ${new Date(i.created_at).toLocaleDateString('pt-BR')}</small>
+              </div>
+              <span class="badge ${cls}">${pct.toFixed(0)}%</span>
+            `;
+            lista.appendChild(li);
+          });
+        }
+      }
+
+      document.querySelectorAll('.skeleton').forEach(s => s.remove());
+    } catch (err) {
+      console.error(err);
+      mostrarToast('❌ Erro ao carregar dados', 'error');
+    } finally {
+      setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
+    }
+  }
+
+  (async () => {
+    if (await verificarLogin()) await carregarDados();
+  })();
+</script>
+</body>
+</html>
