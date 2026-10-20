@@ -5,20 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inspeções | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
+<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
+<!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
-  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none';">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+  <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando inspeções...</p>
 </div>
 
+<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
-    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:24px; font-weight:800; letter-spacing:-1px; text-align:center;\'>INSPEFROTA</div>';">
+    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+    <div style="display:none; color:#ffc93c; font-size:22px; font-weight:800; letter-spacing:-1px; text-align:center;">INSPEFROTA</div>
   </div>
   <div class="nav-label">Painel</div>
   <nav>
@@ -40,6 +44,7 @@
   </div>
 </aside>
 
+<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <h2>Histórico de Inspeções
@@ -56,7 +61,7 @@
   <div class="card" style="padding: 18px 22px; margin-bottom: 20px;">
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
       <input type="text" class="form-control" id="busca" placeholder="🔍 Buscar por placa, inspetor ou checklist..." style="flex: 1; min-width: 240px;" oninput="renderizar()">
-      <select class="form-control" id="filtroResultado" style="max-width: 200px;" onchange="renderizar()">
+      <select class="form-control" id="filtroResultado" style="max-width: 220px;" onchange="renderizar()">
         <option value="">Todos os resultados</option>
         <option value="ok">✅ Alta conformidade (≥90%)</option>
         <option value="parcial">⚠️ Média (70-89%)</option>
@@ -120,14 +125,20 @@
   }
 
   function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+  function esconderLoading() {
+    const o = document.getElementById('loadingOverlay');
+    if (o) o.classList.add('hidden');
+  }
 
   async function verificarLogin() {
-    const { data: { session } } = await db.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; return false; }
-    const nome = session.user.email.split('@')[0];
-    document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
-    document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
-    return true;
+    try {
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) { window.location.href = 'index.html'; return false; }
+      const nome = session.user.email.split('@')[0];
+      document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
+      document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
+      return true;
+    } catch (e) { window.location.href = 'index.html'; return false; }
   }
 
   async function fazerLogout() {
@@ -143,11 +154,16 @@
   }
 
   async function carregarInspecoes() {
-    const { data, error } = await db.from('veiculos_inspecoes').select('*').order('created_at', { ascending: false });
-    if (error) { mostrarToast('❌ ' + error.message, 'error'); return; }
-    inspecoes = data || [];
-    renderizar();
-    setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
+    try {
+      const { data, error } = await db.from('veiculos_inspecoes').select('*').order('created_at', { ascending: false });
+      if (error) { mostrarToast('❌ ' + error.message, 'error'); esconderLoading(); return; }
+      inspecoes = data || [];
+      renderizar();
+      esconderLoading();
+    } catch (err) {
+      console.error(err);
+      esconderLoading();
+    }
   }
 
   function renderizar() {
@@ -211,13 +227,22 @@
     const respostas = i.respostas || [];
     let respostasHtml = '';
     respostas.forEach((r, idx) => {
-      const ok = r.resposta === 'conforme';
+      let icone, cor, label, textoLivre = '';
+      const v = r.resposta;
+
+      if (v === 'conforme') { icone = '✓'; cor = 'var(--success)'; label = '✅ Conforme'; }
+      else if (v === 'nao_conforme') { icone = '✗'; cor = 'var(--danger)'; label = '❌ Não Conforme'; }
+      else if (typeof v === 'string' && v.trim() !== '') {
+        icone = '📝'; cor = 'var(--info)'; label = '📝 Resposta em texto'; textoLivre = v;
+      } else { icone = '·'; cor = 'var(--text-muted)'; label = '— Sem resposta'; }
+
       respostasHtml += `
         <div style="display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); align-items:flex-start;">
-          <div style="width:28px; height:28px; border-radius:50%; background:${ok ? 'var(--success)' : 'var(--danger)'}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex-shrink:0;">${ok ? '✓' : '✗'}</div>
+          <div style="width:28px; height:28px; border-radius:50%; background:${cor}; color:#fff; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex-shrink:0;">${icone}</div>
           <div style="flex:1;">
             <strong style="font-size:13.5px; display:block; margin-bottom:4px;">${idx + 1}. ${r.pergunta}</strong>
-            <small style="color:${ok ? 'var(--success)' : 'var(--danger)'}; font-weight:700;">${ok ? '✅ Conforme' : '❌ Não Conforme'}</small>
+            <small style="color:${cor}; font-weight:700;">${label}</small>
+            ${textoLivre ? `<div style="margin-top:8px; padding:10px 12px; background:#eff6ff; border-left:3px solid var(--info); border-radius:8px; font-size:13px; line-height:1.5; white-space:pre-wrap; word-wrap:break-word;">${textoLivre}</div>` : ''}
           </div>
         </div>
       `;
@@ -251,11 +276,11 @@
         <strong style="min-width:120px; color:var(--text-soft); font-size:12px; text-transform:uppercase;">Resultado</strong>
         <div>
           <span class="badge ${cls}" style="margin-right:8px;">${pct.toFixed(1)}%</span>
-          <span style="color:var(--text-soft); font-size:12.5px;">${i.total_conformes} conformes • ${i.total_nao_conformes} não conformes • ${i.total_itens} itens</span>
+          <span style="color:var(--text-soft); font-size:12.5px;">${i.total_conformes || 0} conformes • ${i.total_nao_conformes || 0} não conformes • ${i.total_itens || 0} itens</span>
         </div>
       </div>
       <h4 style="margin-top:20px; margin-bottom:12px; font-size:15px; font-weight:800;">📝 Respostas (${respostas.length})</h4>
-      ${respostasHtml}
+      ${respostasHtml || '<p style="color:var(--text-soft); text-align:center; padding:20px;">Nenhuma resposta registrada.</p>'}
     `;
 
     document.getElementById('modalDetalhes').classList.add('open');
@@ -271,6 +296,16 @@
     if (i) { inspecaoSelecionada = i; exportarPDFIndividual(); }
   }
 
+  function limparTextoPDF(txt) {
+    if (!txt) return '';
+    return String(txt)
+      .replace(/[\u{1F300}-\u{1FAFF}]/gu, '')
+      .replace(/[\u{2600}-\u{27BF}]/gu, '')
+      .replace(/[\u{1F000}-\u{1F2FF}]/gu, '')
+      .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
+      .trim();
+  }
+
   function exportarPDFIndividual() {
     if (!inspecaoSelecionada) { mostrarToast('⚠️ Nenhuma inspeção selecionada', 'error'); return; }
     const { jsPDF } = window.jspdf;
@@ -280,39 +315,69 @@
     doc.setFillColor(10, 31, 19);
     doc.rect(0, 0, 210, 25, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('RELATÓRIO DE INSPEÇÃO VEICULAR - INSPEFROTA', 105, 15, { align: 'center' });
+    doc.text('RELATORIO DE INSPECAO VEICULAR - INSPEFROTA', 105, 15, { align: 'center' });
 
     let y = 35;
     doc.setTextColor(11, 18, 32);
     doc.setFontSize(10);
-    doc.text(`Veículo: ${i.veiculo_placa} - ${i.veiculo_modelo}`, 15, y); y += 6;
-    doc.text(`Checklist: ${i.checklist_titulo}`, 15, y); y += 6;
-    doc.text(`Inspetor: ${i.inspetor_nome}`, 15, y); y += 6;
-    doc.text(`Local: ${i.local_inspecionado || '—'}`, 15, y); y += 6;
+    doc.text(`Veiculo: ${limparTextoPDF(i.veiculo_placa + ' - ' + i.veiculo_modelo)}`, 15, y); y += 6;
+    doc.text(`Checklist: ${limparTextoPDF(i.checklist_titulo)}`, 15, y); y += 6;
+    doc.text(`Inspetor: ${limparTextoPDF(i.inspetor_nome)}`, 15, y); y += 6;
+    doc.text(`Local: ${limparTextoPDF(i.local_inspecionado || '-')}`, 15, y); y += 6;
     doc.text(`Data: ${formatarData(i.created_at)}`, 15, y); y += 10;
 
     const pct = parseFloat(i.percentual_conformidade) || 0;
     doc.setFillColor(240, 244, 248);
     doc.rect(15, y - 4, 180, 10, 'F');
     doc.setFontSize(9);
-    doc.text(`Conformidade: ${pct.toFixed(1)}% | ${i.total_conformes} conformes | ${i.total_nao_conformes} não conformes`, 15, y + 2);
+    doc.text(`Conformidade: ${pct.toFixed(1)}% | ${i.total_conformes || 0} conformes | ${i.total_nao_conformes || 0} nao conformes`, 15, y + 2);
     y += 14;
 
     (i.respostas || []).forEach((r, idx) => {
-      if (y > 270) { doc.addPage(); y = 20; }
-      const ok = r.resposta === 'conforme';
-      doc.setFillColor(ok ? 209 : 254, ok ? 250 : 226, ok ? 229 : 226);
-      doc.rect(15, y - 4, 180, 8, 'F');
+      const v = r.resposta;
+      const isTexto = typeof v === 'string' && v !== 'conforme' && v !== 'nao_conforme' && v.trim() !== '';
+      const ok = v === 'conforme';
+
+      let alturaBase = 8;
+      if (isTexto) {
+        const textoLimpo = limparTextoPDF(v);
+        const linhas = doc.splitTextToSize(textoLimpo, 165);
+        alturaBase = Math.max(8, linhas.length * 4.5 + 10);
+        if (y + alturaBase > 275) { doc.addPage(); y = 20; }
+      } else {
+        if (y > 275) { doc.addPage(); y = 20; }
+      }
+
+      if (isTexto) {
+        doc.setFillColor(239, 246, 255);
+        doc.rect(15, y - 4, 180, alturaBase, 'F');
+        doc.setFillColor(59, 130, 246);
+        doc.rect(15, y - 4, 1.5, alturaBase, 'F');
+      } else {
+        doc.setFillColor(ok ? 209 : 254, ok ? 250 : 226, ok ? 229 : 226);
+        doc.rect(15, y - 4, 180, 8, 'F');
+      }
+
       doc.setTextColor(11, 18, 32);
       doc.setFontSize(9);
-      doc.text(`${idx + 1}. ${r.pergunta}`, 17, y + 1);
-      doc.setTextColor(ok ? 4 : 153, ok ? 120 : 27, ok ? 87 : 27);
-      doc.setFont('helvetica', 'bold');
-      doc.text(ok ? 'OK' : 'NC', 190, y + 1, { align: 'right' });
-      doc.setFont('helvetica', 'normal');
-      y += 10;
+      doc.text(`${idx + 1}. ${limparTextoPDF(r.pergunta)}`, 17, y + 1);
+
+      if (isTexto) {
+        const textoLimpo = limparTextoPDF(v);
+        const linhas = doc.splitTextToSize(textoLimpo, 165);
+        doc.setTextColor(20, 40, 80);
+        doc.setFontSize(8.5);
+        doc.text(linhas, 19, y + 6);
+      } else {
+        doc.setTextColor(ok ? 4 : 153, ok ? 120 : 27, ok ? 87 : 27);
+        doc.setFont('helvetica', 'bold');
+        doc.text(ok ? 'OK' : 'NC', 190, y + 1, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+      }
+
+      y += alturaBase + 2;
     });
 
     doc.save(`inspecao-${i.veiculo_placa}-${Date.now()}.pdf`);
@@ -347,7 +412,15 @@
   });
 
   (async () => {
-    if (await verificarLogin()) await carregarInspecoes();
+    try {
+      const logado = await verificarLogin();
+      if (!logado) return;
+      await carregarInspecoes();
+    } catch (err) {
+      console.error(err);
+      esconderLoading();
+    }
+    setTimeout(esconderLoading, 5000);
   })();
 </script>
 </body>
