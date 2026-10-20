@@ -1,0 +1,24 @@
+{
+  "name": "INSPEFROTA - Inspeção Veicular",
+  "short_name": "INSPEFROTA",
+  "description": "Sistema de inspeção de frota de veículos",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a1f13",
+  "theme_color": "#0a1f13",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
