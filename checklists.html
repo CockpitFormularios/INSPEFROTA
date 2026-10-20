@@ -5,20 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Checklists | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
+<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
-  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/Logo%20INSPEFROTA%20.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
   <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando checklists...</p>
 </div>
 
+<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
-    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/Logo%20INSPEFROTA%20.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
     <div style="display:none; color:#ffc93c; font-size:22px; font-weight:800; letter-spacing:-1px; text-align:center;">INSPEFROTA</div>
   </div>
   <div class="nav-label">Painel</div>
@@ -41,6 +43,7 @@
   </div>
 </aside>
 
+<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <h2>Checklists de Inspeção
@@ -67,6 +70,7 @@
   </div>
 </main>
 
+<!-- MODAL CRIAR/EDITAR -->
 <div class="modal-overlay" id="modalChecklist">
   <div class="modal" style="max-width: 720px;">
     <div class="modal-header">
@@ -110,6 +114,30 @@
   </div>
 </div>
 
+<!-- MODAL EXCLUIR -->
+<div class="modal-overlay" id="modalExcluir">
+  <div class="modal" style="max-width: 480px;">
+    <div class="modal-header" style="background: linear-gradient(135deg, #fef2f2, #fff);">
+      <h3 style="color: var(--danger); display:flex; align-items:center; gap:8px;">🗑️ Excluir Checklist</h3>
+      <button class="close-btn" onclick="fecharModalExcluir()">✕</button>
+    </div>
+    <div class="modal-body" style="text-align: center;">
+      <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #fee2e2, #fecaca); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">🗑️</div>
+      <h4 style="font-size: 18px; font-weight: 800; margin-bottom: 10px;">Excluir este checklist?</h4>
+      <p style="font-size: 13.5px; color: var(--text-soft); line-height: 1.6; margin-bottom: 20px;">
+        O checklist <strong id="excluirNome">—</strong> será removido permanentemente.<br>
+        Esta ação <strong>não pode ser desfeita</strong>.
+      </p>
+      <p style="font-size: 12.5px; font-weight: 700; margin-bottom: 10px;">Digite <strong style="color: var(--danger);">EXCLUIR</strong> para confirmar:</p>
+      <input type="text" class="form-control" id="inputExcluir" placeholder="EXCLUIR" style="text-align: center; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;" oninput="verificarExcluir()">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModalExcluir()">Cancelar</button>
+      <button class="btn btn-danger" id="btnConfirmarExcluir" onclick="confirmarExcluir()" disabled>🗑️ Excluir Definitivamente</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -121,6 +149,7 @@
   let checklists = [];
   let itensTemp = [];
   let editandoId = null;
+  let checklistParaExcluir = null;
 
   let toastTimer;
   function mostrarToast(msg, erro = false) {
@@ -164,40 +193,52 @@
         return;
       }
       checklists = data || [];
-      const lista = document.getElementById('listaChecklists');
-      const vazio = document.getElementById('vazio');
-      lista.innerHTML = '';
-
-      if (checklists.length === 0) {
-        vazio.style.display = 'block';
-        esconderLoading();
-        return;
-      }
-      vazio.style.display = 'none';
-
-      checklists.forEach(c => {
-        const itens = Array.isArray(c.itens) ? c.itens.length : 0;
-        const card = document.createElement('div');
-        card.style.cssText = 'background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:18px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:0.22s;';
-        card.onmouseover = () => { card.style.borderColor = 'var(--green-600)'; card.style.transform = 'translateY(-2px)'; card.style.boxShadow = 'var(--shadow-md)'; };
-        card.onmouseout = () => { card.style.borderColor = 'var(--border)'; card.style.transform = 'translateY(0)'; card.style.boxShadow = 'none'; };
-        card.onclick = () => editarChecklist(c.id);
-        card.innerHTML = `
-          <div style="width:52px; height:52px; border-radius:14px; background: var(--green-100); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0;">📋</div>
-          <div style="flex:1;">
-            <h4 style="font-size:15px; font-weight:800; margin-bottom:4px;">${c.titulo}</h4>
-            <p style="font-size:12.5px; color:var(--text-soft);">${c.descricao || 'Sem descrição'}</p>
-          </div>
-          <span style="background: var(--green-100); color: var(--green-700); padding: 5px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 800;">${itens} itens</span>
-        `;
-        lista.appendChild(card);
-      });
-
+      renderizarChecklists();
       esconderLoading();
     } catch (err) {
       console.error(err);
       esconderLoading();
     }
+  }
+
+  function renderizarChecklists() {
+    const lista = document.getElementById('listaChecklists');
+    const vazio = document.getElementById('vazio');
+    lista.innerHTML = '';
+
+    if (checklists.length === 0) {
+      vazio.style.display = 'block';
+      return;
+    }
+    vazio.style.display = 'none';
+
+    checklists.forEach(c => {
+      const itens = Array.isArray(c.itens) ? c.itens.length : 0;
+      const itensTexto = Array.isArray(c.itens) ? c.itens.filter(i => i.tipo === 'texto').length : 0;
+      const card = document.createElement('div');
+      card.style.cssText = 'background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:18px; display:flex; align-items:center; gap:14px; transition:0.22s;';
+
+      card.innerHTML = `
+        <div style="width:52px; height:52px; border-radius:14px; background: var(--green-100); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0;">📋</div>
+        <div style="flex:1; cursor:pointer;" onclick="editarChecklist('${c.id}')">
+          <h4 style="font-size:15px; font-weight:800; margin-bottom:4px;">${c.titulo}</h4>
+          <p style="font-size:12.5px; color:var(--text-soft);">${c.descricao || 'Sem descrição'}</p>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <span style="background: var(--green-100); color: var(--green-700); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800;">${itens} itens</span>
+            ${itensTexto > 0 ? `<span style="background: var(--info-soft); color: var(--info); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800;">📝 ${itensTexto} texto${itensTexto > 1 ? 's' : ''}</span>` : ''}
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; flex-shrink:0;">
+          <button class="btn btn-secondary" style="padding: 9px 14px; font-size: 13px;" onclick="editarChecklist('${c.id}')" title="Editar">✏️</button>
+          <button class="btn btn-danger" style="padding: 9px 14px; font-size: 13px;" onclick="abrirModalExcluir('${c.id}')" title="Excluir">🗑️</button>
+        </div>
+      `;
+
+      card.onmouseover = () => { card.style.borderColor = 'var(--green-600)'; card.style.boxShadow = 'var(--shadow-md)'; };
+      card.onmouseout = () => { card.style.borderColor = 'var(--border)'; card.style.boxShadow = 'none'; };
+
+      lista.appendChild(card);
+    });
   }
 
   function abrirModal(c = null) {
@@ -217,7 +258,7 @@
   }
 
   function editarChecklist(id) {
-    const c = checklists.find(x => x.id === id);
+    const c = checklists.find(x => String(x.id) === String(id));
     if (c) abrirModal(c);
   }
 
@@ -305,7 +346,52 @@
   }
 
   // ============================================================
-  // 📋 MODELO PRONTO DE INSPEÇÃO VEICULAR
+  // 🗑️ EXCLUIR
+  // ============================================================
+  function abrirModalExcluir(id) {
+    const c = checklists.find(x => String(x.id) === String(id));
+    if (!c) return;
+    checklistParaExcluir = c;
+    document.getElementById('excluirNome').textContent = c.titulo;
+    document.getElementById('inputExcluir').value = '';
+    document.getElementById('btnConfirmarExcluir').disabled = true;
+    document.getElementById('modalExcluir').classList.add('open');
+    setTimeout(() => document.getElementById('inputExcluir').focus(), 100);
+  }
+
+  function fecharModalExcluir() {
+    document.getElementById('modalExcluir').classList.remove('open');
+    checklistParaExcluir = null;
+  }
+
+  function verificarExcluir() {
+    const v = document.getElementById('inputExcluir').value.trim().toUpperCase();
+    document.getElementById('btnConfirmarExcluir').disabled = v !== 'EXCLUIR';
+  }
+
+  async function confirmarExcluir() {
+    if (!checklistParaExcluir) return;
+    const btn = document.getElementById('btnConfirmarExcluir');
+    btn.disabled = true;
+    btn.textContent = '⏳ Excluindo...';
+
+    try {
+      const { error } = await db.from('veiculos_checklists').delete().eq('id', checklistParaExcluir.id);
+      if (error) throw error;
+
+      fecharModalExcluir();
+      mostrarToast('🗑️ Checklist excluído!');
+      await carregarChecklists();
+    } catch (err) {
+      console.error(err);
+      mostrarToast('❌ ' + err.message, true);
+      btn.disabled = false;
+      btn.textContent = '🗑️ Excluir Definitivamente';
+    }
+  }
+
+  // ============================================================
+  // 📋 MODELO PRONTO
   // ============================================================
   function carregarModeloPronto() {
     const modelo = {
@@ -345,6 +431,15 @@
     }
   }
 
+  // Fechar modais ao clicar fora
+  document.getElementById('modalChecklist').addEventListener('click', e => {
+    if (e.target.id === 'modalChecklist') fecharModal();
+  });
+  document.getElementById('modalExcluir').addEventListener('click', e => {
+    if (e.target.id === 'modalExcluir') fecharModalExcluir();
+  });
+
+  // INICIALIZAÇÃO
   (async () => {
     try {
       const logado = await verificarLogin();
