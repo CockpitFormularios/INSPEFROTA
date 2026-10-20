@@ -8,15 +8,25 @@
 <link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Configurações do App no Celular (PWA) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a1f13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INSPEFROTA">
+<link rel="apple-touch-icon" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 </head>
 <body>
 
+<!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
   <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
   <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando inspeções...</p>
 </div>
 
+<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -42,6 +52,7 @@
   </div>
 </aside>
 
+<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <h2>Histórico de Inspeções
@@ -54,6 +65,7 @@
     </div>
   </div>
 
+  <!-- FILTROS -->
   <div class="card" style="padding: 18px 22px; margin-bottom: 20px;">
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
       <input type="text" class="form-control" id="busca" placeholder="🔍 Buscar por placa, inspetor ou checklist..." style="flex: 1; min-width: 240px;" oninput="renderizar()">
@@ -66,6 +78,7 @@
     </div>
   </div>
 
+  <!-- TABELA -->
   <div class="table-wrap">
     <table>
       <thead>
@@ -83,6 +96,7 @@
   </div>
 </main>
 
+<!-- MODAL DETALHES -->
 <div class="modal-overlay" id="modalDetalhes">
   <div class="modal" style="max-width: 720px;">
     <div class="modal-header">
@@ -97,6 +111,7 @@
   </div>
 </div>
 
+<!-- MODAL EXCLUIR -->
 <div class="modal-overlay" id="modalExcluir">
   <div class="modal" style="max-width: 480px;">
     <div class="modal-header" style="background: linear-gradient(135deg, #fef2f2, #fff);">
@@ -547,5 +562,17 @@
     setTimeout(esconderLoading, 5000);
   })();
 </script>
+
+<!-- Script para registrar o Service Worker (PWA) -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker registrado com sucesso!'))
+        .catch(err => console.log('Erro ao registrar Service Worker:', err));
+    });
+  }
+</script>
+
 </body>
 </html>
