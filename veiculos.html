@@ -5,20 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Veículos | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
+<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
-  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/Logo%20INSPEFROTA%20.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
   <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando frota...</p>
 </div>
 
+<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
-    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/Logo%20INSPEFROTA%20.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
     <div style="display:none; color:#ffc93c; font-size:22px; font-weight:800; letter-spacing:-1px; text-align:center;">INSPEFROTA</div>
   </div>
   <div class="nav-label">Painel</div>
@@ -41,6 +43,7 @@
   </div>
 </aside>
 
+<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <h2>Frota de Veículos
@@ -61,6 +64,7 @@
   <div class="veiculos-grid" id="gridVeiculos"></div>
 </main>
 
+<!-- MODAL CADASTRO / EDIÇÃO -->
 <div class="modal-overlay" id="modalVeiculo">
   <div class="modal">
     <div class="modal-header">
@@ -74,21 +78,11 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Marca <span>*</span></label>
-          <input type="text" class="form-control" id="marca" placeholder="Ex: Volkswagen">
+          <label>Setor</label>
+          <input type="text" class="form-control" id="setor" placeholder="Ex: Manutenção">
         </div>
         <div class="form-group">
-          <label>Modelo <span>*</span></label>
-          <input type="text" class="form-control" id="modelo" placeholder="Ex: Gol 1.6">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Ano</label>
-          <input type="number" class="form-control" id="ano" placeholder="2020">
-        </div>
-        <div class="form-group">
-          <label>Tipo</label>
+          <label>Tipo (opcional)</label>
           <select class="form-control" id="tipo">
             <option value="Carro">🚗 Carro</option>
             <option value="Caminhão">🚚 Caminhão</option>
@@ -98,14 +92,34 @@
           </select>
         </div>
       </div>
-      <div class="form-group">
-        <label>Setor</label>
-        <input type="text" class="form-control" id="setor" placeholder="Ex: Manutenção">
-      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarVeiculo()">💾 Salvar Veículo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EXCLUIR -->
+<div class="modal-overlay" id="modalExcluir">
+  <div class="modal" style="max-width: 480px;">
+    <div class="modal-header" style="background: linear-gradient(135deg, #fef2f2, #fff);">
+      <h3 style="color: var(--danger); display:flex; align-items:center; gap:8px;">🗑️ Excluir Veículo</h3>
+      <button class="close-btn" onclick="fecharModalExcluir()">✕</button>
+    </div>
+    <div class="modal-body" style="text-align: center;">
+      <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #fee2e2, #fecaca); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">🗑️</div>
+      <h4 style="font-size: 18px; font-weight: 800; margin-bottom: 10px;">Excluir este veículo?</h4>
+      <p style="font-size: 13.5px; color: var(--text-soft); line-height: 1.6; margin-bottom: 20px;">
+        O veículo <strong id="excluirNome">—</strong> será removido da frota.<br>
+        Esta ação <strong>não pode ser desfeita</strong>.
+      </p>
+      <p style="font-size: 12.5px; font-weight: 700; margin-bottom: 10px;">Digite <strong style="color: var(--danger);">EXCLUIR</strong> para confirmar:</p>
+      <input type="text" class="form-control" id="inputExcluir" placeholder="EXCLUIR" style="text-align: center; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;" oninput="verificarExcluir()">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModalExcluir()">Cancelar</button>
+      <button class="btn btn-danger" id="btnConfirmarExcluir" onclick="confirmarExcluir()" disabled>🗑️ Excluir Definitivamente</button>
     </div>
   </div>
 </div>
@@ -120,6 +134,7 @@
 
   let veiculos = [];
   let editandoId = null;
+  let veiculoParaExcluir = null;
 
   let toastTimer;
   function mostrarToast(msg, erro = false) {
@@ -145,11 +160,7 @@
       document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
       document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
       return true;
-    } catch (e) {
-      console.error('Erro login:', e);
-      window.location.href = 'index.html';
-      return false;
-    }
+    } catch (e) { window.location.href = 'index.html'; return false; }
   }
 
   async function fazerLogout() {
@@ -166,10 +177,8 @@
   async function carregarVeiculos() {
     try {
       const { data, error } = await db.from('veiculos').select('*').eq('ativo', true).order('placa');
-
       if (error) {
-        console.error('Erro ao carregar veículos:', error);
-        mostrarToast('❌ Erro ao carregar: ' + error.message, true);
+        mostrarToast('❌ ' + error.message, true);
         esconderLoading();
         return;
       }
@@ -193,19 +202,23 @@
       veiculos.forEach(v => {
         const card = document.createElement('div');
         card.className = 'veiculo-card';
+        // O clique no card abre a edição, mas os botões têm stopPropagation
         card.onclick = () => editarVeiculo(v.id);
         card.innerHTML = `
           <div class="veiculo-icon-wrap">${iconeTipo(v.tipo)}</div>
           <div class="veiculo-placa">${v.placa}</div>
-          <div class="veiculo-modelo">${v.marca} ${v.modelo} ${v.ano ? '(' + v.ano + ')' : ''}</div>
-          <span class="veiculo-badge">${v.tipo || 'Carro'} • ${v.setor || 'Geral'}</span>
+          <div class="veiculo-modelo">${v.setor ? 'Setor: ' + v.setor : 'Sem setor definido'}</div>
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn btn-secondary" style="flex:1; padding: 8px; font-size: 12px;" onclick="event.stopPropagation(); editarVeiculo('${v.id}')">✏️ Editar</button>
+            <button class="btn btn-danger" style="flex:1; padding: 8px; font-size: 12px;" onclick="event.stopPropagation(); abrirModalExcluir('${v.id}')">🗑️ Excluir</button>
+          </div>
         `;
         grid.appendChild(card);
       });
 
       esconderLoading();
     } catch (err) {
-      console.error('Erro geral:', err);
+      console.error(err);
       mostrarToast('❌ Erro inesperado', true);
       esconderLoading();
     }
@@ -215,11 +228,8 @@
     editandoId = v?.id || null;
     document.getElementById('modalTitle').textContent = v ? 'Editar Veículo' : 'Cadastrar Veículo';
     document.getElementById('placa').value = v?.placa || '';
-    document.getElementById('marca').value = v?.marca || '';
-    document.getElementById('modelo').value = v?.modelo || '';
-    document.getElementById('ano').value = v?.ano || '';
-    document.getElementById('tipo').value = v?.tipo || 'Carro';
     document.getElementById('setor').value = v?.setor || '';
+    document.getElementById('tipo').value = v?.tipo || 'Carro';
     document.getElementById('modalVeiculo').classList.add('open');
   }
 
@@ -228,23 +238,23 @@
   }
 
   function editarVeiculo(id) {
-    const v = veiculos.find(x => x.id === id);
+    const v = veiculos.find(x => String(x.id) === String(id));
     if (v) abrirModal(v);
   }
 
   async function salvarVeiculo() {
     const dados = {
       placa: document.getElementById('placa').value.trim().toUpperCase(),
-      marca: document.getElementById('marca').value.trim(),
-      modelo: document.getElementById('modelo').value.trim(),
-      ano: parseInt(document.getElementById('ano').value) || null,
-      tipo: document.getElementById('tipo').value,
       setor: document.getElementById('setor').value.trim(),
+      tipo: document.getElementById('tipo').value,
+      // Como não tem marca/modelo no form, salvamos um valor padrão para não quebrar o banco
+      marca: 'N/A',
+      modelo: 'N/A',
       ativo: true
     };
 
-    if (!dados.placa || !dados.marca || !dados.modelo) {
-      mostrarToast('⚠️ Preencha placa, marca e modelo!', true);
+    if (!dados.placa) {
+      mostrarToast('⚠️ Preencha a placa do veículo!', true);
       return;
     }
 
@@ -266,21 +276,73 @@
     }
   }
 
+  // ============================================================
+  // 🗑️ EXCLUIR VEÍCULO
+  // ============================================================
+  function abrirModalExcluir(id) {
+    const v = veiculos.find(x => String(x.id) === String(id));
+    if (!v) return;
+    veiculoParaExcluir = v;
+    document.getElementById('excluirNome').textContent = v.placa;
+    document.getElementById('inputExcluir').value = '';
+    document.getElementById('btnConfirmarExcluir').disabled = true;
+    document.getElementById('modalExcluir').classList.add('open');
+    setTimeout(() => document.getElementById('inputExcluir').focus(), 100);
+  }
+
+  function fecharModalExcluir() {
+    document.getElementById('modalExcluir').classList.remove('open');
+    veiculoParaExcluir = null;
+  }
+
+  function verificarExcluir() {
+    const v = document.getElementById('inputExcluir').value.trim().toUpperCase();
+    document.getElementById('btnConfirmarExcluir').disabled = v !== 'EXCLUIR';
+  }
+
+  async function confirmarExcluir() {
+    if (!veiculoParaExcluir) return;
+    const btn = document.getElementById('btnConfirmarExcluir');
+    btn.disabled = true;
+    btn.textContent = '⏳ Excluindo...';
+
+    try {
+      // Soft delete: apenas marca como inativo para preservar o histórico
+      const { error } = await db.from('veiculos').update({ ativo: false }).eq('id', veiculoParaExcluir.id);
+      if (error) throw error;
+
+      fecharModalExcluir();
+      mostrarToast('🗑️ Veículo removido da frota!');
+      await carregarVeiculos();
+    } catch (err) {
+      console.error(err);
+      mostrarToast('❌ ' + err.message, true);
+      btn.disabled = false;
+      btn.textContent = '🗑️ Excluir Definitivamente';
+    }
+  }
+
   document.getElementById('placa').addEventListener('input', (e) => {
     e.target.value = e.target.value.toUpperCase();
   });
 
-  // ✅ INICIALIZAÇÃO COM PROTEÇÃO TOTAL
+  document.getElementById('modalVeiculo').addEventListener('click', e => {
+    if (e.target.id === 'modalVeiculo') fecharModal();
+  });
+  document.getElementById('modalExcluir').addEventListener('click', e => {
+    if (e.target.id === 'modalExcluir') fecharModalExcluir();
+  });
+
+  // INICIALIZAÇÃO
   (async () => {
     try {
       const logado = await verificarLogin();
       if (!logado) return;
       await carregarVeiculos();
     } catch (err) {
-      console.error('Erro init:', err);
+      console.error(err);
       esconderLoading();
     }
-    // ✅ Fallback: força esconder loading após 5 segundos (caso algo trave)
     setTimeout(esconderLoading, 5000);
   })();
 </script>
