@@ -11,14 +11,12 @@
 </head>
 <body>
 
-<!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
   <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
   <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando inspeções...</p>
 </div>
 
-<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -44,7 +42,6 @@
   </div>
 </aside>
 
-<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <h2>Histórico de Inspeções
@@ -57,7 +54,6 @@
     </div>
   </div>
 
-  <!-- FILTROS -->
   <div class="card" style="padding: 18px 22px; margin-bottom: 20px;">
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
       <input type="text" class="form-control" id="busca" placeholder="🔍 Buscar por placa, inspetor ou checklist..." style="flex: 1; min-width: 240px;" oninput="renderizar()">
@@ -70,7 +66,6 @@
     </div>
   </div>
 
-  <!-- TABELA -->
   <div class="table-wrap">
     <table>
       <thead>
@@ -88,7 +83,6 @@
   </div>
 </main>
 
-<!-- MODAL DETALHES -->
 <div class="modal-overlay" id="modalDetalhes">
   <div class="modal" style="max-width: 720px;">
     <div class="modal-header">
@@ -103,7 +97,6 @@
   </div>
 </div>
 
-<!-- MODAL EXCLUIR -->
 <div class="modal-overlay" id="modalExcluir">
   <div class="modal" style="max-width: 480px;">
     <div class="modal-header" style="background: linear-gradient(135deg, #fef2f2, #fff);">
@@ -270,7 +263,6 @@
       `;
     });
 
-    // Seção de fotos no modal
     let fotosHtml = '';
     if (i.fotos && i.fotos.length > 0) {
       fotosHtml = `
@@ -325,9 +317,6 @@
     inspecaoSelecionada = null;
   }
 
-  // ============================================================
-  // 🗑️ EXCLUIR INSPEÇÃO E FOTOS
-  // ============================================================
   function abrirModalExcluir(id) {
     const i = inspecoes.find(x => String(x.id) === String(id));
     if (!i) return;
@@ -356,21 +345,17 @@
     btn.textContent = '⏳ Excluindo...';
 
     try {
-      // 1. Se houver fotos, deleta do Storage primeiro
       if (inspecaoParaExcluir.fotos && inspecaoParaExcluir.fotos.length > 0) {
         const fotosParaRemover = [];
         inspecaoParaExcluir.fotos.forEach(url => {
           const partes = url.split('/cipa-inspecoes/');
           if (partes.length > 1) fotosParaRemover.push(partes[1]);
         });
-        
         if (fotosParaRemover.length > 0) {
-          const { error: storageError } = await db.storage.from('cipa-inspecoes').remove(fotosParaRemover);
-          if (storageError) console.warn('Erro ao apagar fotos:', storageError);
+          await db.storage.from('cipa-inspecoes').remove(fotosParaRemover);
         }
       }
 
-      // 2. Deleta o registro do banco
       const { error: dbError } = await db.from('veiculos_inspecoes').delete().eq('id', inspecaoParaExcluir.id);
       if (dbError) throw dbError;
 
@@ -391,26 +376,26 @@
   }
 
   // ============================================================
-  // 📄 GERAR PDF IDÊNTICO AO DO INSPETOR
+  // 📄 GERAR PDF COM FOTOS (CORRIGIDO)
   // ============================================================
-  async function loadImageAsDataURL(url) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          const maxW = 600;
-          const scale = img.naturalWidth > maxW ? maxW / img.naturalWidth : 1;
-          canvas.width = img.naturalWidth * scale;
-          canvas.height = img.naturalHeight * scale;
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', 0.6));
-        } catch (e) { reject(e); }
-      };
-      img.onerror = () => reject(new Error('Falha'));
-      img.src = url;
-    });
+  
+  // Função otimizada para baixar a imagem via fetch (evita bloqueio de CORS)
+  async function urlParaBase64(url) {
+    try {
+      const response = await fetch(url, { mode: 'cors' });
+      if (!response.ok) throw new Error('Erro HTTP ' + response.status);
+      
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.error('Erro ao baixar imagem:', err);
+      return null;
+    }
   }
 
   async function exportarPDFIndividual() {
@@ -423,7 +408,6 @@
     const margin = 10;
     let y = 0;
 
-    // Cabeçalho
     doc.setFillColor(10, 31, 19);
     doc.rect(0, 0, 210, 18, 'F');
     doc.setTextColor(255, 255, 255);
@@ -450,7 +434,6 @@
     doc.text(`Conformidade: ${pct.toFixed(1)}% | ${d.total_conformes} OK | ${d.total_nao_conformes} NC`, 160, y + 0.5, { align: 'center' });
     y += 10;
 
-    // Itens
     const respostas = d.respostas || [];
     respostas.forEach((r, idx) => {
       const v = r.resposta;
@@ -480,7 +463,6 @@
       }
     });
 
-    // Fotos
     if (d.fotos && d.fotos.length > 0) {
       if (y + 30 > 280) { doc.addPage(); y = 15; } 
       else { y += 4; }
@@ -497,13 +479,21 @@
       for (let i = 0; i < d.fotos.length; i++) {
         if (y + alturaFoto + 4 > 285) { doc.addPage(); y = 15; col = 0; }
         const x = margin + col * (larguraFoto + gap);
-        try {
-          const base64 = await loadImageAsDataURL(d.fotos[i]);
-          doc.addImage(base64, 'JPEG', x, y, larguraFoto, alturaFoto);
+        
+        // 👇 AQUI ESTÁ A CORREÇÃO: Baixa a imagem via fetch para não ser bloqueado
+        const base64 = await urlParaBase64(d.fotos[i]);
+
+        if (base64) {
+          try {
+            doc.addImage(base64, 'JPEG', x, y, larguraFoto, alturaFoto);
+            doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
+          } catch (e) {
+            doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
+            doc.setFontSize(6); doc.setTextColor(148, 163, 184); doc.text('Erro', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
+          }
+        } else {
           doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
-        } catch (e) {
-          doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
-          doc.setFontSize(6); doc.setTextColor(148, 163, 184); doc.text('Erro', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
+          doc.setFontSize(6); doc.setTextColor(148, 163, 184); doc.text('Indisponivel', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
         }
         col++;
         if (col >= colunas) { col = 0; y += alturaFoto + 2; }
