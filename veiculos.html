@@ -7,17 +7,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 <link rel="stylesheet" href="style.css">
+
+<!-- Configurações do App no Celular (PWA) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a1f13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INSPEFROTA">
+<link rel="apple-touch-icon" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 </head>
 <body>
 
-<!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
   <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
   <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando frota...</p>
 </div>
 
-<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -43,7 +49,6 @@
   </div>
 </aside>
 
-<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <h2>Frota de Veículos
@@ -99,7 +104,7 @@
       <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #fee2e2, #fecaca); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">🗑️</div>
       <h4 style="font-size: 18px; font-weight: 800; margin-bottom: 10px;">Excluir este veículo?</h4>
       <p style="font-size: 13.5px; color: var(--text-soft); line-height: 1.6; margin-bottom: 20px;">
-        O veículo <strong id="excluirNome">—</strong> será removido da frota.<br>
+        O veículo <strong id="excluirPlaca">—</strong> será removido da frota.<br>
         Esta ação <strong>não pode ser desfeita</strong>.
       </p>
       <p style="font-size: 12.5px; font-weight: 700; margin-bottom: 10px;">Digite <strong style="color: var(--danger);">EXCLUIR</strong> para confirmar:</p>
@@ -186,7 +191,6 @@
         const card = document.createElement('div');
         card.className = 'veiculo-card';
         card.onclick = () => editarVeiculo(v.id);
-        // Ícone fixo 🚗 já que não tem mais o tipo
         card.innerHTML = `
           <div class="veiculo-icon-wrap">🚗</div>
           <div class="veiculo-placa">${v.placa}</div>
@@ -228,7 +232,6 @@
     const dados = {
       placa: document.getElementById('placa').value.trim().toUpperCase(),
       setor: document.getElementById('setor').value.trim(),
-      // Mantemos valores padrão para não quebrar o banco de dados antigo
       tipo: 'Carro', 
       marca: 'N/A',
       modelo: 'N/A',
@@ -265,7 +268,7 @@
     const v = veiculos.find(x => String(x.id) === String(id));
     if (!v) return;
     veiculoParaExcluir = v;
-    document.getElementById('excluirNome').textContent = v.placa;
+    document.getElementById('excluirPlaca').textContent = v.placa;
     document.getElementById('inputExcluir').value = '';
     document.getElementById('btnConfirmarExcluir').disabled = true;
     document.getElementById('modalExcluir').classList.add('open');
@@ -328,5 +331,17 @@
     setTimeout(esconderLoading, 5000);
   })();
 </script>
+
+<!-- Script para registrar o Service Worker (PWA) -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker registrado com sucesso!'))
+        .catch(err => console.log('Erro ao registrar Service Worker:', err));
+    });
+  }
+</script>
+
 </body>
 </html>
