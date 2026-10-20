@@ -5,19 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
+<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
-  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none';">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+  <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando painel...</p>
 </div>
 
+<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
-    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:24px; font-weight:800; letter-spacing:-1px; text-align:center;\'>INSPEFROTA</div>';">
+    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+    <div style="display:none; color:#ffc93c; font-size:22px; font-weight:800; letter-spacing:-1px; text-align:center;">INSPEFROTA</div>
   </div>
   <div class="nav-label">Painel</div>
   <nav>
@@ -39,6 +43,7 @@
   </div>
 </aside>
 
+<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <h2>Painel de Inspeção Veicular
@@ -55,10 +60,7 @@
     <div class="gestao-card-info">
       <div class="gestao-card-icon">🚗</div>
       <div class="gestao-card-text">
-        <h3>
-          Frota Ativa
-          <span class="gestao-card-badge">SISTEMA ONLINE</span>
-        </h3>
+        <h3>Frota Ativa <span class="gestao-card-badge">SISTEMA ONLINE</span></h3>
         <p>Controle total das inspeções veiculares</p>
       </div>
     </div>
@@ -69,31 +71,28 @@
 
   <section class="kpis">
     <div class="kpi" onclick="window.location.href='veiculos.html'">
-      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" class="kpi-bg-icon" alt="">
+      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" class="kpi-bg-icon" alt="">
       <div class="kpi-header"><div class="kpi-icon">🚗</div></div>
       <div class="kpi-value" id="kpiVeiculos"><span class="skeleton"></span></div>
       <div class="kpi-label">Veículos Cadastrados</div>
       <span class="kpi-trend" id="kpiVeiculosTrend">Carregando...</span>
     </div>
-
     <div class="kpi info" onclick="window.location.href='checklists.html'">
-      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" class="kpi-bg-icon" alt="">
+      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" class="kpi-bg-icon" alt="">
       <div class="kpi-header"><div class="kpi-icon">📋</div></div>
       <div class="kpi-value" id="kpiChecklists"><span class="skeleton"></span></div>
       <div class="kpi-label">Checklists Disponíveis</div>
       <span class="kpi-trend" id="kpiChecklistsTrend">Carregando...</span>
     </div>
-
     <div class="kpi warn" onclick="window.location.href='inspecoes.html'">
-      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" class="kpi-bg-icon" alt="">
+      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" class="kpi-bg-icon" alt="">
       <div class="kpi-header"><div class="kpi-icon">🔍</div></div>
       <div class="kpi-value" id="kpiInspecoes"><span class="skeleton"></span></div>
       <div class="kpi-label">Inspeções Realizadas</div>
       <span class="kpi-trend" id="kpiInspecoesTrend">Carregando...</span>
     </div>
-
     <div class="kpi danger" onclick="window.location.href='inspecoes.html'">
-      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" class="kpi-bg-icon" alt="">
+      <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" class="kpi-bg-icon" alt="">
       <div class="kpi-header"><div class="kpi-icon">⚠️</div></div>
       <div class="kpi-value" id="kpiNC"><span class="skeleton"></span></div>
       <div class="kpi-label">Não Conformidades</div>
@@ -104,24 +103,15 @@
   <div class="grid-3">
     <div class="atalho-card" onclick="window.location.href='veiculos.html'">
       <div class="atalho-icon veiculos">🚗</div>
-      <div class="atalho-info">
-        <h4>Veículos</h4>
-        <p>Cadastrar e gerenciar a frota</p>
-      </div>
+      <div class="atalho-info"><h4>Veículos</h4><p>Cadastrar e gerenciar a frota</p></div>
     </div>
     <div class="atalho-card" onclick="window.location.href='checklists.html'">
       <div class="atalho-icon checklists">📋</div>
-      <div class="atalho-info">
-        <h4>Checklists</h4>
-        <p>Criar modelos de inspeção</p>
-      </div>
+      <div class="atalho-info"><h4>Checklists</h4><p>Criar modelos de inspeção</p></div>
     </div>
     <div class="atalho-card" onclick="window.location.href='inspecoes.html'">
       <div class="atalho-icon inspecoes">🔍</div>
-      <div class="atalho-info">
-        <h4>Ver Inspeções</h4>
-        <p>Histórico completo com PDF</p>
-      </div>
+      <div class="atalho-info"><h4>Ver Inspeções</h4><p>Histórico completo com PDF</p></div>
     </div>
   </div>
 
@@ -154,15 +144,25 @@
   }
 
   function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+  
+  function esconderLoading() {
+    const o = document.getElementById('loadingOverlay');
+    if (o) o.classList.add('hidden');
+  }
 
   async function verificarLogin() {
-    const { data: { session } } = await db.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; return false; }
-    const nome = session.user.email.split('@')[0];
-    document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
-    document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
-    document.getElementById('saudacao').textContent = `Olá, ${nome.charAt(0).toUpperCase() + nome.slice(1)}! Aqui está o resumo.`;
-    return true;
+    try {
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) { window.location.href = 'index.html'; return false; }
+      const nome = session.user.email.split('@')[0];
+      document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
+      document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
+      document.getElementById('saudacao').textContent = `Olá, ${nome.charAt(0).toUpperCase() + nome.slice(1)}! Aqui está o resumo.`;
+      return true;
+    } catch (e) {
+      window.location.href = 'index.html';
+      return false;
+    }
   }
 
   async function fazerLogout() {
@@ -173,29 +173,35 @@
 
   async function carregarDados() {
     try {
+      // 1. Veículos
       const { count: cVeiculos } = await db.from('veiculos').select('*', { count: 'exact', head: true }).eq('ativo', true);
       document.getElementById('kpiVeiculos').textContent = cVeiculos || 0;
       document.getElementById('kpiVeiculosTrend').textContent = cVeiculos > 0 ? `✅ ${cVeiculos} ativos` : '⚠️ Nenhum cadastrado';
 
+      // 2. Checklists
       const { count: cChecklists } = await db.from('veiculos_checklists').select('*', { count: 'exact', head: true }).eq('ativo', true);
       document.getElementById('kpiChecklists').textContent = cChecklists || 0;
       document.getElementById('kpiChecklistsTrend').textContent = cChecklists > 0 ? `📋 ${cChecklists} modelo${cChecklists > 1 ? 's' : ''}` : '⚠️ Nenhum criado';
 
+      // 3. Inspeções
       const { count: cInspecoes } = await db.from('veiculos_inspecoes').select('*', { count: 'exact', head: true });
       document.getElementById('kpiInspecoes').textContent = cInspecoes || 0;
       document.getElementById('kpiInspecoesTrend').textContent = cInspecoes > 0 ? `✅ ${cInspecoes} realizadas` : '📭 Nenhuma ainda';
 
+      // 4. Não Conformidades
       const { data: insp } = await db.from('veiculos_inspecoes').select('total_nao_conformes');
       const totalNC = (insp || []).reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
       document.getElementById('kpiNC').textContent = totalNC;
       document.getElementById('kpiNCTrend').textContent = totalNC > 0 ? '⚠️ Atenção necessária' : '✅ Tudo em ordem';
 
+      // Últimas 5 inspeções
       if (cInspecoes > 0) {
         const { data: ultimas } = await db.from('veiculos_inspecoes').select('*').order('created_at', { ascending: false }).limit(5);
         if (ultimas && ultimas.length > 0) {
           document.getElementById('secaoInspecoes').style.display = 'block';
           const lista = document.getElementById('listaInspecoes');
           lista.innerHTML = '';
+          
           ultimas.forEach(i => {
             const pct = parseFloat(i.percentual_conformidade) || 0;
             const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
@@ -204,10 +210,12 @@
             li.onclick = () => window.location.href = 'inspecoes.html';
             li.onmouseover = () => li.style.paddingLeft = '6px';
             li.onmouseout = () => li.style.paddingLeft = '0';
+            
+            // Como removemos o modelo do veículo, mostramos apenas a placa
             li.innerHTML = `
               <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--green-500),var(--green-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0;">${(i.veiculo_placa || 'XX').substring(0,2).toUpperCase()}</div>
               <div style="flex:1;min-width:0;">
-                <strong style="display:block;font-size:13.5px;font-weight:700;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.veiculo_placa} - ${i.veiculo_modelo}</strong>
+                <strong style="display:block;font-size:13.5px;font-weight:700;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.veiculo_placa}</strong>
                 <small style="color:var(--text-soft);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${i.checklist_titulo} • ${i.inspetor_nome} • ${new Date(i.created_at).toLocaleDateString('pt-BR')}</small>
               </div>
               <span class="badge ${cls}">${pct.toFixed(0)}%</span>
@@ -222,12 +230,20 @@
       console.error(err);
       mostrarToast('❌ Erro ao carregar dados', 'error');
     } finally {
-      setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
+      esconderLoading();
     }
   }
 
   (async () => {
-    if (await verificarLogin()) await carregarDados();
+    try {
+      const logado = await verificarLogin();
+      if (!logado) return;
+      await carregarDados();
+    } catch (err) {
+      console.error(err);
+      esconderLoading();
+    }
+    setTimeout(esconderLoading, 5000);
   })();
 </script>
 </body>
