@@ -11,12 +11,14 @@
 </head>
 <body>
 
+<!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
   <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
   <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando inspeções...</p>
 </div>
 
+<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -42,6 +44,7 @@
   </div>
 </aside>
 
+<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <h2>Histórico de Inspeções
@@ -54,6 +57,7 @@
     </div>
   </div>
 
+  <!-- FILTROS -->
   <div class="card" style="padding: 18px 22px; margin-bottom: 20px;">
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
       <input type="text" class="form-control" id="busca" placeholder="🔍 Buscar por placa, inspetor ou checklist..." style="flex: 1; min-width: 240px;" oninput="renderizar()">
@@ -66,6 +70,7 @@
     </div>
   </div>
 
+  <!-- TABELA -->
   <div class="table-wrap">
     <table>
       <thead>
@@ -83,6 +88,7 @@
   </div>
 </main>
 
+<!-- MODAL DETALHES -->
 <div class="modal-overlay" id="modalDetalhes">
   <div class="modal" style="max-width: 720px;">
     <div class="modal-header">
@@ -97,6 +103,7 @@
   </div>
 </div>
 
+<!-- MODAL EXCLUIR -->
 <div class="modal-overlay" id="modalExcluir">
   <div class="modal" style="max-width: 480px;">
     <div class="modal-header" style="background: linear-gradient(135deg, #fef2f2, #fff);">
@@ -215,7 +222,6 @@
     lista.forEach(i => {
       const pct = parseFloat(i.percentual_conformidade) || 0;
       const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
-      // Verifica se tem fotos para mostrar um ícone na tabela
       const temFotos = i.fotos && i.fotos.length > 0 ? `📸 ${i.fotos.length}` : '';
       
       const tr = document.createElement('tr');
@@ -271,7 +277,7 @@
       fotosHtml = `
         <h4 style="margin-top:24px; margin-bottom:12px; font-size:15px; font-weight:800;">📸 Fotos da Inspeção (${i.fotos.length})</h4>
         <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:10px;">
-          ${i.fotos.map(url => `<a href="${url}" target="_blank"><img src="${url}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1.5px solid var(--border);"></a>`).join('')}
+          ${i.fotos.map(url => `<a href="${url}" target="_blank"><img src="${url}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1.5px solid var(--border);" onerror="this.style.border='2px solid red'; this.alt='Erro';"></a>`).join('')}
         </div>
       `;
     }
@@ -379,7 +385,7 @@
   }
 
   // ============================================================
-  // 📄 GERAR PDF IDÊNTICO AO DO INSPETOR (MESMO ESQUEMA)
+  // 📄 GERAR PDF IDÊNTICO AO DO INSPETOR
   // ============================================================
   
   function loadImageAsDataURL(url) {
@@ -497,11 +503,6 @@
         col++;
         if (col >= colunas) { col = 0; y += alturaFoto + 2; }
       }
-    } else {
-      // Se não houver fotos, adiciona um aviso no final do PDF
-      y += 8;
-      doc.setTextColor(148, 163, 184); doc.setFontSize(8); doc.setFont('helvetica', 'italic');
-      doc.text('* Nenhuma foto foi anexada a esta inspecao.', margin, y);
     }
 
     doc.save(`inspecao-${d.veiculo_placa}-${Date.now()}.pdf`);
