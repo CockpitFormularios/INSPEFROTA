@@ -8,6 +8,15 @@
 <link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Configurações do App no Celular (PWA) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a1f13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INSPEFROTA">
+<link rel="apple-touch-icon" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
+
 <style>
   .texto-livre textarea { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 11px; font-size: 13.5px; font-family: inherit; resize: vertical; min-height: 100px; outline: none; transition: all 0.2s; }
   .texto-livre textarea:focus { border-color: var(--green-600); box-shadow: 0 0 0 4px rgba(46,139,87,0.1); }
@@ -98,7 +107,7 @@
 
     <div id="itensInspecao"></div>
 
-    <!-- SEÇÃO DE FOTOS (OPCIONAL AGORA) -->
+    <!-- SEÇÃO DE FOTOS (OPCIONAL) -->
     <div class="fotos-section">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom: 6px;">
         <div style="font-size: 15px; font-weight: 800;">📸 Fotos da Inspeção (Opcional)</div>
@@ -141,7 +150,7 @@
   let veiculoSel = null;
   let checklistSel = null;
   let respostas = {};
-  let fotos = []; // Continua existindo, mas não é mais obrigatório
+  let fotos = [];
   let ultimaInspecao = null;
 
   let toastTimer;
@@ -509,5 +518,17 @@
 
   (async () => { await carregarVeiculos(); await carregarChecklists(); esconderLoading(); })();
 </script>
+
+<!-- Script para registrar o Service Worker (PWA) -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker registrado com sucesso!'))
+        .catch(err => console.log('Erro ao registrar Service Worker:', err));
+    });
+  }
+</script>
+
 </body>
 </html>
