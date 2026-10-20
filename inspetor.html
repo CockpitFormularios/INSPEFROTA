@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Área do Inspetor | Inspeção Veicular</title>
+<title>Área do Inspetor | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
 <link rel="stylesheet" href="style.css">
@@ -12,12 +12,12 @@
 <body style="display:block;">
 
 <div class="loading-overlay" id="loadingOverlay">
-  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" alt="Logo" class="loading-logo">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:28px; font-weight:800; letter-spacing:-1px;\'>INSPEFROTA</div><p style=\'color:#fff; font-weight:600; font-size:14px; margin-top:10px;\'>Carregando inspeção...</p>';">
   <p style="font-weight:600; font-size:14px;">Carregando inspeção...</p>
 </div>
 
 <header style="background: linear-gradient(135deg, var(--green-900), var(--green-700)); padding: 16px 24px; display:flex; justify-content: space-between; align-items:center; box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: 50;">
-  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-cipa-ativa.png" style="height: 52px; object-fit: contain;">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" style="height: 52px; object-fit: contain;" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:22px; font-weight:800; letter-spacing:-1px;\'>INSPEFROTA</div>';">
   <a href="index.html" style="color:#fff; text-decoration:none; font-size:13px; font-weight:700; background: rgba(255,255,255,0.12); padding: 10px 18px; border-radius: 11px;">← Voltar ao Login</a>
 </header>
 
@@ -37,7 +37,7 @@
     <div id="vazioVeiculos" class="empty-state" style="display:none;">
       <div class="icon">🚗</div>
       <h3>Nenhum veículo disponível</h3>
-      <p>O gestor precisa cadastrar os veículos em <strong>Veículos</strong> no painel administrativo.</p>
+      <p>O gestor precisa cadastrar os veículos no painel administrativo.</p>
     </div>
   </div>
 
@@ -48,7 +48,7 @@
     <div id="vazioChecklists" class="empty-state" style="display:none;">
       <div class="icon">📋</div>
       <h3>Nenhum checklist disponível</h3>
-      <p>O gestor precisa criar os checklists em <strong>Checklists</strong> no painel administrativo.</p>
+      <p>O gestor precisa criar os checklists no painel administrativo.</p>
     </div>
     <button class="btn btn-secondary" style="margin-top: 16px; width:100%; justify-content: center;" onclick="voltarPasso1()">← Trocar Veículo</button>
   </div>
@@ -130,9 +130,8 @@
   }
 
   function irParaEtapa(n) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     ['step1','step2','step3','step4'].forEach(id => document.getElementById(id).style.display = 'none');
-    document.getElementById('step' + n).style.display = (n === 3 ? 'block' : 'block');
+    document.getElementById('step' + n).style.display = 'block';
     document.querySelectorAll('.step-dot').forEach(d => {
       const step = parseInt(d.dataset.step);
       d.classList.toggle('active', step === n);
@@ -150,13 +149,12 @@
     if (veiculos.length === 0) {
       lista.innerHTML = '';
       vazio.style.display = 'block';
-      setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
       return;
     }
     vazio.style.display = 'none';
     lista.innerHTML = '';
     veiculos.forEach(v => {
-      const icone = v.tipo === 'Moto' ? '🏍️' : v.tipo === 'Caminhão' ? '🚚' : v.tipo === 'Van' ? '🚐' : '🚗';
+      const icone = v.tipo === 'Moto' ? '🏍️' : v.tipo === 'Caminhão' ? '🚚' : v.tipo === 'Van' ? '🚐' : v.tipo === 'Máquina' ? '🚜' : '🚗';
       const card = document.createElement('div');
       card.className = 'veiculo-card';
       card.onclick = () => selecionarVeiculo(v);
@@ -168,7 +166,6 @@
       `;
       lista.appendChild(card);
     });
-    setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
   }
 
   async function carregarChecklists() {
@@ -274,7 +271,6 @@
   }
 
   async function enviarInspecao() {
-    // ✅ Nome é OPCIONAL agora
     const nomeDigitado = document.getElementById('inspetorNome').value.trim();
     const nomeFinal = nomeDigitado || 'Inspetor Anônimo';
 
@@ -355,21 +351,21 @@
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('RELATÓRIO DE INSPEÇÃO VEICULAR', 105, 15, { align: 'center' });
+    doc.text('RELATORIO DE INSPECAO VEICULAR - INSPEFROTA', 105, 15, { align: 'center' });
 
     let y = 35;
     doc.setTextColor(11, 18, 32);
     doc.setFontSize(10);
-    doc.text(`Veículo: ${d.veiculo}`, 15, y); y += 6;
+    doc.text(`Veiculo: ${d.veiculo}`, 15, y); y += 6;
     doc.text(`Checklist: ${d.checklist}`, 15, y); y += 6;
     doc.text(`Inspetor: ${d.inspetor}`, 15, y); y += 6;
-    doc.text(`Local: ${d.local || '—'}`, 15, y); y += 6;
+    doc.text(`Local: ${d.local || '-'}`, 15, y); y += 6;
     doc.text(`Data: ${d.data}`, 15, y); y += 10;
 
     doc.setFillColor(240, 244, 248);
     doc.rect(15, y - 4, 180, 10, 'F');
     doc.setFontSize(9);
-    doc.text(`Conformidade: ${d.percentual}% | ${d.conforme} conformes | ${d.naoConforme} não conformes`, 15, y + 2);
+    doc.text(`Conformidade: ${d.percentual}% | ${d.conforme} conformes | ${d.naoConforme} nao conformes`, 15, y + 2);
     y += 14;
 
     d.itens.forEach((item, idx) => {
@@ -395,6 +391,7 @@
   (async () => {
     await carregarVeiculos();
     await carregarChecklists();
+    setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
   })();
 </script>
 </body>
