@@ -7,17 +7,23 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 <link rel="stylesheet" href="style.css">
+
+<!-- Configurações do App no Celular (PWA) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a1f13">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INSPEFROTA">
+<link rel="apple-touch-icon" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 </head>
 <body>
 
-<!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
   <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
   <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando checklists...</p>
 </div>
 
-<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -43,7 +49,6 @@
   </div>
 </aside>
 
-<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <h2>Checklists de Inspeção
@@ -217,7 +222,7 @@
       const itensTexto = Array.isArray(c.itens) ? c.itens.filter(i => i.tipo === 'texto').length : 0;
       const card = document.createElement('div');
       card.style.cssText = 'background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:18px; display:flex; align-items:center; gap:14px; transition:0.22s;';
-
+      
       card.innerHTML = `
         <div style="width:52px; height:52px; border-radius:14px; background: var(--green-100); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0;">📋</div>
         <div style="flex:1; cursor:pointer;" onclick="editarChecklist('${c.id}')">
@@ -346,7 +351,7 @@
   }
 
   // ============================================================
-  // 🗑️ EXCLUIR
+  // 🗑️ EXCLUIR CHECKLIST
   // ============================================================
   function abrirModalExcluir(id) {
     const c = checklists.find(x => String(x.id) === String(id));
@@ -376,11 +381,12 @@
     btn.textContent = '⏳ Excluindo...';
 
     try {
-      const { error } = await db.from('veiculos_checklists').delete().eq('id', checklistParaExcluir.id);
+      // Soft delete: marca como inativo para não perder histórico de inspeções
+      const { error } = await db.from('veiculos_checklists').update({ ativo: false }).eq('id', checklistParaExcluir.id);
       if (error) throw error;
 
       fecharModalExcluir();
-      mostrarToast('🗑️ Checklist excluído!');
+      mostrarToast('🗑️ Checklist removido!');
       await carregarChecklists();
     } catch (err) {
       console.error(err);
@@ -431,7 +437,6 @@
     }
   }
 
-  // Fechar modais ao clicar fora
   document.getElementById('modalChecklist').addEventListener('click', e => {
     if (e.target.id === 'modalChecklist') fecharModal();
   });
@@ -439,7 +444,6 @@
     if (e.target.id === 'modalExcluir') fecharModalExcluir();
   });
 
-  // INICIALIZAÇÃO
   (async () => {
     try {
       const logado = await verificarLogin();
@@ -452,5 +456,17 @@
     setTimeout(esconderLoading, 5000);
   })();
 </script>
+
+<!-- Script para registrar o Service Worker (PWA) -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Service Worker registrado com sucesso!'))
+        .catch(err => console.log('Erro ao registrar Service Worker:', err));
+    });
+  }
+</script>
+
 </body>
 </html>
