@@ -376,26 +376,28 @@
   }
 
   // ============================================================
-  // 📄 GERAR PDF COM FOTOS (CORRIGIDO)
+  // 📄 GERAR PDF IDÊNTICO AO DO INSPETOR (MESMO ESQUEMA)
   // ============================================================
   
-  // Função otimizada para baixar a imagem via fetch (evita bloqueio de CORS)
-  async function urlParaBase64(url) {
-    try {
-      const response = await fetch(url, { mode: 'cors' });
-      if (!response.ok) throw new Error('Erro HTTP ' + response.status);
-      
-      const blob = await response.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } catch (err) {
-      console.error('Erro ao baixar imagem:', err);
-      return null;
-    }
+  // ✅ ESSA É A FUNÇÃO QUE O INSPETOR USA (usa a tag img para contornar CORS)
+  function loadImageAsDataURL(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const maxW = 600;
+          const scale = img.naturalWidth > maxW ? maxW / img.naturalWidth : 1;
+          canvas.width = img.naturalWidth * scale;
+          canvas.height = img.naturalHeight * scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        } catch (e) { reject(e); }
+      };
+      img.onerror = () => reject(new Error('Falha ao carregar imagem'));
+      img.src = url;
+    });
   }
 
   async function exportarPDFIndividual() {
@@ -480,21 +482,17 @@
         if (y + alturaFoto + 4 > 285) { doc.addPage(); y = 15; col = 0; }
         const x = margin + col * (larguraFoto + gap);
         
-        // 👇 AQUI ESTÁ A CORREÇÃO: Baixa a imagem via fetch para não ser bloqueado
-        const base64 = await urlParaBase64(d.fotos[i]);
-
-        if (base64) {
-          try {
-            doc.addImage(base64, 'JPEG', x, y, larguraFoto, alturaFoto);
-            doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
-          } catch (e) {
-            doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
-            doc.setFontSize(6); doc.setTextColor(148, 163, 184); doc.text('Erro', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
-          }
-        } else {
+        try {
+          // 👇 Usando a mesma função do inspetor que funciona perfeitamente
+          const base64 = await loadImageAsDataURL(d.fotos[i]);
+          doc.addImage(base64, 'JPEG', x, y, larguraFoto, alturaFoto);
           doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
-          doc.setFontSize(6); doc.setTextColor(148, 163, 184); doc.text('Indisponivel', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
+        } catch (err) {
+          console.error('Erro na foto:', err);
+          doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
+          doc.setFontSize(6); doc.setTextColor(148, 163, 184); doc.text('Erro', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
         }
+        
         col++;
         if (col >= colunas) { col = 0; y += alturaFoto + 2; }
       }
