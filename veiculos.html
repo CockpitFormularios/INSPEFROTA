@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Veículos | Inspeção Veicular</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" alt="Logo" class="loading-logo">
+  <p style="font-weight:600; font-size:14px;">Carregando frota...</p>
+</div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-cipa-ativa.png" alt="Logo" class="brand-logo">
+  </div>
+  <div class="nav-label">Painel</div>
+  <nav>
+    <a href="dashboard.html"><span class="icon">📊</span> Dashboard</a>
+    <a class="active"><span class="icon">🚗</span> Veículos</a>
+  </nav>
+  <div class="nav-label">Inspeções</div>
+  <nav>
+    <a href="inspecoes.html"><span class="icon">🔍</span> Ver Inspeções</a>
+    <a href="checklists.html"><span class="icon">📋</span> Checklists</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar-sm" id="userAvatar">?</div>
+    <div class="info">
+      <strong id="userName">—</strong>
+      <small>Gestor de Frota</small>
+    </div>
+    <button class="btn-logout" onclick="fazerLogout()" title="Sair">🚪</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <h2>Frota de Veículos
+      <span>Cadastre a placa e o veículo para ficar disponível para inspeção</span>
+    </h2>
+    <div class="topbar-actions">
+      <button class="btn btn-gold" onclick="abrirModal()">➕ Novo Veículo</button>
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+    </div>
+  </div>
+
+  <div class="card" style="background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(46,139,87,0.06)); border-left: 4px solid var(--green-600); padding: 18px 22px; margin-bottom: 24px;">
+    <p style="font-size: 13px; color: var(--text-soft); line-height: 1.6;">
+      💡 <strong style="color: var(--green-700);">Dica:</strong> Ao cadastrar um veículo aqui, ele aparecerá automaticamente na tela do inspetor em <code style="background:#fff;padding:2px 6px;border-radius:4px;font-size:12px;">checklistsCIPEIROS.html</code> para ser selecionado.
+    </p>
+  </div>
+
+  <div class="veiculos-grid" id="gridVeiculos"></div>
+</main>
+
+<div class="modal-overlay" id="modalVeiculo">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Cadastrar Veículo</h3>
+      <button class="close-btn" onclick="fecharModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Placa <span>*</span></label>
+        <input type="text" class="form-control" id="placa" placeholder="ABC-1234" maxlength="8" style="text-transform: uppercase; font-weight: 700; letter-spacing: 1px; font-size: 16px;">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Marca <span>*</span></label>
+          <input type="text" class="form-control" id="marca" placeholder="Ex: Volkswagen">
+        </div>
+        <div class="form-group">
+          <label>Modelo <span>*</span></label>
+          <input type="text" class="form-control" id="modelo" placeholder="Ex: Gol 1.6">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ano</label>
+          <input type="number" class="form-control" id="ano" placeholder="2020">
+        </div>
+        <div class="form-group">
+          <label>Tipo</label>
+          <select class="form-control" id="tipo">
+            <option value="Carro">🚗 Carro</option>
+            <option value="Caminhão">🚚 Caminhão</option>
+            <option value="Moto">🏍️ Moto</option>
+            <option value="Van">🚐 Van</option>
+            <option value="Máquina">🚜 Máquina</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Setor</label>
+        <input type="text" class="form-control" id="setor" placeholder="Ex: Manutenção">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarVeiculo()">💾 Salvar Veículo</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://rvtquhqeivrhcdoreghu.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_kNF6eX_67yzNGWIyjwZvOw_0__qWSMW';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let veiculos = [];
+  let editandoId = null;
+
+  let toastTimer;
+  function mostrarToast(msg, erro = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (erro ? 'error' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+  async function verificarLogin() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return false; }
+    const nome = session.user.email.split('@')[0];
+    document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
+    document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
+    return true;
+  }
+
+  async function fazerLogout() {
+    if (!confirm('Deseja sair?')) return;
+    await db.auth.signOut();
+    window.location.href = 'index.html';
+  }
+
+  function iconeTipo(tipo) {
+    const mapa = { 'Moto': '🏍️', 'Caminhão': '🚚', 'Van': '🚐', 'Máquina': '🚜' };
+    return mapa[tipo] || '🚗';
+  }
+
+  async function carregarVeiculos() {
+    const { data } = await db.from('veiculos').select('*').eq('ativo', true).order('placa');
+    veiculos = data || [];
+    const grid = document.getElementById('gridVeiculos');
+    grid.innerHTML = '';
+
+    if (veiculos.length === 0) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column: 1/-1;">
+          <div class="icon">🚗</div>
+          <h3>Nenhum veículo cadastrado</h3>
+          <p>Clique em "Novo Veículo" para cadastrar a primeira placa da frota.</p>
+        </div>
+      `;
+      return;
+    }
+
+    veiculos.forEach(v => {
+      const card = document.createElement('div');
+      card.className = 'veiculo-card';
+      card.onclick = () => editarVeiculo(v.id);
+      card.innerHTML = `
+        <div class="veiculo-icon-wrap">${iconeTipo(v.tipo)}</div>
+        <div class="veiculo-placa">${v.placa}</div>
+        <div class="veiculo-modelo">${v.marca} ${v.modelo} ${v.ano ? '(' + v.ano + ')' : ''}</div>
+        <span class="veiculo-badge">${v.tipo || 'Carro'} • ${v.setor || 'Geral'}</span>
+      `;
+      grid.appendChild(card);
+    });
+
+    setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
+  }
+
+  function abrirModal(v = null) {
+    editandoId = v?.id || null;
+    document.getElementById('modalTitle').textContent = v ? 'Editar Veículo' : 'Cadastrar Veículo';
+    document.getElementById('placa').value = v?.placa || '';
+    document.getElementById('marca').value = v?.marca || '';
+    document.getElementById('modelo').value = v?.modelo || '';
+    document.getElementById('ano').value = v?.ano || '';
+    document.getElementById('tipo').value = v?.tipo || 'Carro';
+    document.getElementById('setor').value = v?.setor || '';
+    document.getElementById('modalVeiculo').classList.add('open');
+  }
+
+  function fecharModal() {
+    document.getElementById('modalVeiculo').classList.remove('open');
+  }
+
+  function editarVeiculo(id) {
+    const v = veiculos.find(x => x.id === id);
+    if (v) abrirModal(v);
+  }
+
+  async function salvarVeiculo() {
+    const dados = {
+      placa: document.getElementById('placa').value.trim().toUpperCase(),
+      marca: document.getElementById('marca').value.trim(),
+      modelo: document.getElementById('modelo').value.trim(),
+      ano: parseInt(document.getElementById('ano').value) || null,
+      tipo: document.getElementById('tipo').value,
+      setor: document.getElementById('setor').value.trim(),
+      ativo: true
+    };
+
+    if (!dados.placa || !dados.marca || !dados.modelo) {
+      mostrarToast('⚠️ Preencha placa, marca e modelo!', true);
+      return;
+    }
+
+    try {
+      if (editandoId) {
+        await db.from('veiculos').update(dados).eq('id', editandoId);
+        mostrarToast('✅ Veículo atualizado!');
+      } else {
+        const { error } = await db.from('veiculos').insert([dados]);
+        if (error) throw error;
+        mostrarToast('✅ Veículo cadastrado! Agora aparece na tela do inspetor.');
+      }
+      fecharModal();
+      await carregarVeiculos();
+    } catch (err) {
+      mostrarToast('❌ ' + err.message, true);
+    }
+  }
+
+  document.getElementById('placa').addEventListener('input', (e) => {
+    e.target.value = e.target.value.toUpperCase();
+  });
+
+  (async () => {
+    if (await verificarLogin()) await carregarVeiculos();
+  })();
+</script>
+</body>
+</html>

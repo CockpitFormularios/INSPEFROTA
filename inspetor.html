@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Área do Inspetor | Inspeção Veicular</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body style="display:block;">
+
+<div class="loading-overlay" id="loadingOverlay">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" alt="Logo" class="loading-logo">
+  <p style="font-weight:600; font-size:14px;">Carregando inspeção...</p>
+</div>
+
+<header style="background: linear-gradient(135deg, var(--green-900), var(--green-700)); padding: 16px 24px; display:flex; justify-content: space-between; align-items:center; box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: 50;">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-cipa-ativa.png" style="height: 52px; object-fit: contain;">
+  <a href="index.html" style="color:#fff; text-decoration:none; font-size:13px; font-weight:700; background: rgba(255,255,255,0.12); padding: 10px 18px; border-radius: 11px;">← Voltar ao Login</a>
+</header>
+
+<div style="max-width: 800px; margin: 0 auto; padding: 24px 16px 80px;">
+
+  <div class="step-indicator" id="stepIndicator">
+    <div class="step-dot active" data-step="1"><span class="step-num">1</span> Veículo</div>
+    <div class="step-dot" data-step="2"><span class="step-num">2</span> Checklist</div>
+    <div class="step-dot" data-step="3"><span class="step-num">3</span> Inspeção</div>
+    <div class="step-dot" data-step="4"><span class="step-num">4</span> Envio</div>
+  </div>
+
+  <div class="card" id="step1">
+    <h2 style="text-align:center; font-size: 22px; font-weight:800; margin-bottom: 8px;">🚗 Selecione o Veículo</h2>
+    <p style="text-align:center; font-size: 13px; color: var(--text-soft); margin-bottom: 22px;">Escolha a placa do veículo que vai inspecionar</p>
+    <div id="listaVeiculos" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;"></div>
+    <div id="vazioVeiculos" class="empty-state" style="display:none;">
+      <div class="icon">🚗</div>
+      <h3>Nenhum veículo disponível</h3>
+      <p>O gestor precisa cadastrar os veículos em <strong>Veículos</strong> no painel administrativo.</p>
+    </div>
+  </div>
+
+  <div class="card" id="step2" style="display:none;">
+    <h2 style="text-align:center; font-size: 22px; font-weight:800; margin-bottom: 8px;">📋 Escolha o Checklist</h2>
+    <p style="text-align:center; font-size: 13px; color: var(--text-soft); margin-bottom: 22px;">Selecione o modelo de inspeção</p>
+    <div id="listaChecklists" style="display:grid; gap: 12px;"></div>
+    <div id="vazioChecklists" class="empty-state" style="display:none;">
+      <div class="icon">📋</div>
+      <h3>Nenhum checklist disponível</h3>
+      <p>O gestor precisa criar os checklists em <strong>Checklists</strong> no painel administrativo.</p>
+    </div>
+    <button class="btn btn-secondary" style="margin-top: 16px; width:100%; justify-content: center;" onclick="voltarPasso1()">← Trocar Veículo</button>
+  </div>
+
+  <div id="step3" style="display:none;">
+    <div class="gestao-card" style="padding: 20px;">
+      <div class="gestao-card-info">
+        <div class="gestao-card-icon" style="width: 52px; height: 52px; font-size: 24px;">🚗</div>
+        <div class="gestao-card-text">
+          <h3 style="font-size: 18px;" id="veiculoSel">—</h3>
+          <p style="font-size: 12.5px;" id="checklistSel">—</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Seu Nome (opcional)</label>
+          <input type="text" class="form-control" id="inspetorNome" placeholder="Deixe em branco se preferir">
+          <small style="font-size:11.5px; color: var(--text-soft); display:block; margin-top:6px;">Se deixar em branco, será salvo como <strong>"Inspetor Anônimo"</strong></small>
+        </div>
+        <div class="form-group">
+          <label>Local da Inspeção</label>
+          <input type="text" class="form-control" id="localInsp" placeholder="Ex: Pátio, Garagem">
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-info">
+        <span>Progresso da inspeção</span>
+        <span id="progresso">0 / 0</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+      </div>
+    </div>
+
+    <div id="itensInspecao"></div>
+
+    <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top: 20px; padding: 16px;" onclick="enviarInspecao()" id="btnEnviar">✅ Finalizar e Enviar Inspeção</button>
+    <button class="btn btn-secondary" style="width:100%; justify-content:center; margin-top: 10px;" onclick="voltarPasso2()">← Trocar Checklist</button>
+  </div>
+
+  <div class="card" id="step4" style="display:none; text-align:center; padding: 50px 30px;">
+    <div style="width: 100px; height: 100px; margin: 0 auto 24px; background: linear-gradient(135deg, var(--success-soft), #a7f3d0); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 50px; animation: pulse-success 2s infinite;">✅</div>
+    <h2 style="font-size: 26px; font-weight:800; margin-bottom: 10px;">Inspeção Enviada!</h2>
+    <p style="color: var(--text-soft); margin-bottom: 26px; font-size: 14.5px;">A inspeção foi registrada com sucesso e já está disponível para o gestor.</p>
+    <div id="resumoFinal" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 26px;"></div>
+    <button class="btn btn-primary" style="width:100%; justify-content:center; margin-bottom: 10px;" onclick="baixarPDF()">📄 Baixar PDF</button>
+    <button class="btn btn-gold" style="width:100%; justify-content:center;" onclick="location.reload()">🔄 Nova Inspeção</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://rvtquhqeivrhcdoreghu.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_kNF6eX_67yzNGWIyjwZvOw_0__qWSMW';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let veiculos = [];
+  let checklists = [];
+  let veiculoSel = null;
+  let checklistSel = null;
+  let respostas = {};
+  let ultimaInspecao = null;
+
+  let toastTimer;
+  function mostrarToast(msg, erro = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (erro ? 'error' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function irParaEtapa(n) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    ['step1','step2','step3','step4'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('step' + n).style.display = (n === 3 ? 'block' : 'block');
+    document.querySelectorAll('.step-dot').forEach(d => {
+      const step = parseInt(d.dataset.step);
+      d.classList.toggle('active', step === n);
+      d.classList.toggle('done', step < n);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function carregarVeiculos() {
+    const { data } = await db.from('veiculos').select('*').eq('ativo', true).order('placa');
+    veiculos = data || [];
+    const lista = document.getElementById('listaVeiculos');
+    const vazio = document.getElementById('vazioVeiculos');
+
+    if (veiculos.length === 0) {
+      lista.innerHTML = '';
+      vazio.style.display = 'block';
+      setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
+      return;
+    }
+    vazio.style.display = 'none';
+    lista.innerHTML = '';
+    veiculos.forEach(v => {
+      const icone = v.tipo === 'Moto' ? '🏍️' : v.tipo === 'Caminhão' ? '🚚' : v.tipo === 'Van' ? '🚐' : '🚗';
+      const card = document.createElement('div');
+      card.className = 'veiculo-card';
+      card.onclick = () => selecionarVeiculo(v);
+      card.innerHTML = `
+        <div class="veiculo-icon-wrap">${icone}</div>
+        <div class="veiculo-placa">${v.placa}</div>
+        <div class="veiculo-modelo">${v.marca} ${v.modelo}${v.ano ? ' (' + v.ano + ')' : ''}</div>
+        <span class="veiculo-badge">${v.tipo || 'Carro'} • ${v.setor || 'Geral'}</span>
+      `;
+      lista.appendChild(card);
+    });
+    setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
+  }
+
+  async function carregarChecklists() {
+    const { data } = await db.from('veiculos_checklists').select('*').eq('ativo', true).order('titulo');
+    checklists = data || [];
+    const lista = document.getElementById('listaChecklists');
+    const vazio = document.getElementById('vazioChecklists');
+
+    if (checklists.length === 0) {
+      lista.innerHTML = '';
+      vazio.style.display = 'block';
+      return;
+    }
+    vazio.style.display = 'none';
+    lista.innerHTML = '';
+    checklists.forEach(c => {
+      const itens = Array.isArray(c.itens) ? c.itens.length : 0;
+      const btn = document.createElement('button');
+      btn.style.cssText = 'background:#fff; border:2px solid var(--border); border-radius:14px; padding:18px; display:flex; align-items:center; gap:14px; cursor:pointer; text-align:left; font-family:inherit; transition:0.22s; width:100%;';
+      btn.onmouseover = () => { btn.style.borderColor = 'var(--green-600)'; btn.style.transform = 'translateY(-2px)'; btn.style.boxShadow = 'var(--shadow-md)'; };
+      btn.onmouseout = () => { btn.style.borderColor = 'var(--border)'; btn.style.transform = 'translateY(0)'; btn.style.boxShadow = 'none'; };
+      btn.onclick = () => selecionarChecklist(c);
+      btn.innerHTML = `
+        <div style="width:52px; height:52px; background: var(--green-100); border-radius: 14px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">${c.icone || '📋'}</div>
+        <div style="flex:1;">
+          <h4 style="font-size:15px; font-weight:800; margin-bottom:4px;">${c.titulo}</h4>
+          <p style="font-size:12.5px; color:var(--text-soft);">${c.descricao || 'Sem descrição'}</p>
+        </div>
+        <span style="background: var(--green-100); color: var(--green-700); padding: 5px 12px; border-radius: 20px; font-size:11.5px; font-weight:800;">${itens} itens</span>
+      `;
+      lista.appendChild(btn);
+    });
+  }
+
+  function selecionarVeiculo(v) {
+    veiculoSel = v;
+    irParaEtapa(2);
+  }
+
+  function selecionarChecklist(c) {
+    checklistSel = c;
+    respostas = {};
+    document.getElementById('veiculoSel').textContent = `${veiculoSel.placa} - ${veiculoSel.marca} ${veiculoSel.modelo}`;
+    document.getElementById('checklistSel').textContent = c.titulo;
+    renderizarItens();
+    irParaEtapa(3);
+  }
+
+  function voltarPasso1() {
+    veiculoSel = null;
+    irParaEtapa(1);
+  }
+
+  function voltarPasso2() {
+    if (!confirm('Voltar e trocar o checklist? As respostas serão perdidas.')) return;
+    respostas = {};
+    checklistSel = null;
+    irParaEtapa(2);
+  }
+
+  function renderizarItens() {
+    const container = document.getElementById('itensInspecao');
+    container.innerHTML = '';
+    checklistSel.itens.forEach((item, idx) => {
+      const block = document.createElement('div');
+      block.className = 'item-block';
+      block.id = 'item-' + item.id;
+      block.innerHTML = `
+        <div class="item-header">
+          <div class="item-num">${idx + 1}</div>
+          <div class="item-pergunta">${item.pergunta}</div>
+        </div>
+        <div class="resp-options">
+          <button class="resp-opt conforme" onclick="responder('${item.id}', 'conforme', this)">✅ Conforme</button>
+          <button class="resp-opt nao-conforme" onclick="responder('${item.id}', 'nao_conforme', this)">❌ Não Conforme</button>
+        </div>
+      `;
+      container.appendChild(block);
+    });
+    atualizarProgresso();
+  }
+
+  function responder(itemId, valor, btn) {
+    const block = document.getElementById('item-' + itemId);
+    block.querySelectorAll('.resp-opt').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    respostas[itemId] = valor;
+    block.classList.remove('respondido-conforme', 'respondido-nao-conforme');
+    block.classList.add(valor === 'conforme' ? 'respondido-conforme' : 'respondido-nao-conforme');
+    atualizarProgresso();
+  }
+
+  function atualizarProgresso() {
+    const total = checklistSel.itens.length;
+    const respondidos = Object.keys(respostas).length;
+    document.getElementById('progresso').textContent = `${respondidos} / ${total}`;
+    document.getElementById('progressBar').style.width = ((respondidos / total) * 100) + '%';
+    const btn = document.getElementById('btnEnviar');
+    btn.disabled = respondidos < total;
+    btn.textContent = respondidos < total
+      ? `⏳ Faltam ${total - respondidos} itens`
+      : '✅ Finalizar e Enviar Inspeção';
+  }
+
+  async function enviarInspecao() {
+    // ✅ Nome é OPCIONAL agora
+    const nomeDigitado = document.getElementById('inspetorNome').value.trim();
+    const nomeFinal = nomeDigitado || 'Inspetor Anônimo';
+
+    const itens = checklistSel.itens;
+    let conforme = 0, naoConforme = 0;
+    const respostasArr = itens.map(item => {
+      const r = respostas[item.id];
+      if (r === 'conforme') conforme++;
+      else if (r === 'nao_conforme') naoConforme++;
+      return { item_id: item.id, pergunta: item.pergunta, resposta: r };
+    });
+
+    const percentual = ((conforme / itens.length) * 100).toFixed(2);
+
+    const btn = document.getElementById('btnEnviar');
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+
+    try {
+      const { error } = await db.from('veiculos_inspecoes').insert([{
+        checklist_id: checklistSel.id,
+        checklist_titulo: checklistSel.titulo,
+        checklist_categoria: checklistSel.categoria,
+        inspetor_nome: nomeFinal,
+        veiculo_placa: veiculoSel.placa,
+        veiculo_modelo: `${veiculoSel.marca} ${veiculoSel.modelo}`,
+        local_inspecionado: document.getElementById('localInsp').value.trim(),
+        respostas: respostasArr,
+        total_itens: itens.length,
+        total_conformes: conforme,
+        total_nao_conformes: naoConforme,
+        percentual_conformidade: percentual,
+        status: 'concluida'
+      }]);
+      if (error) throw error;
+
+      ultimaInspecao = {
+        veiculo: `${veiculoSel.placa} - ${veiculoSel.marca} ${veiculoSel.modelo}`,
+        checklist: checklistSel.titulo,
+        inspetor: nomeFinal,
+        local: document.getElementById('localInsp').value.trim(),
+        data: new Date().toLocaleString('pt-BR'),
+        itens: itens, respostas: respostasArr, conforme, naoConforme, percentual
+      };
+
+      document.getElementById('resumoFinal').innerHTML = `
+        <div style="background: var(--success-soft); padding:16px; border-radius:12px; border:1.5px solid var(--success);">
+          <div style="font-size:26px; font-weight:800; color:#047857;">${conforme}</div>
+          <div style="font-size:11px; font-weight:700; color:var(--text-soft);">CONFORMES</div>
+        </div>
+        <div style="background: var(--danger-soft); padding:16px; border-radius:12px; border:1.5px solid var(--danger);">
+          <div style="font-size:26px; font-weight:800; color:#991b1b;">${naoConforme}</div>
+          <div style="font-size:11px; font-weight:700; color:var(--text-soft);">NÃO CONF.</div>
+        </div>
+        <div style="background: var(--bg); padding:16px; border-radius:12px; border:1.5px solid var(--border);">
+          <div style="font-size:26px; font-weight:800;">${percentual}%</div>
+          <div style="font-size:11px; font-weight:700; color:var(--text-soft);">CONFORMIDADE</div>
+        </div>
+      `;
+
+      irParaEtapa(4);
+      mostrarToast('✅ Inspeção enviada com sucesso!');
+    } catch (err) {
+      mostrarToast('❌ ' + err.message, true);
+      btn.disabled = false;
+      btn.textContent = '✅ Finalizar e Enviar Inspeção';
+    }
+  }
+
+  function baixarPDF() {
+    if (!ultimaInspecao) return;
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const d = ultimaInspecao;
+
+    doc.setFillColor(10, 31, 19);
+    doc.rect(0, 0, 210, 25, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RELATÓRIO DE INSPEÇÃO VEICULAR', 105, 15, { align: 'center' });
+
+    let y = 35;
+    doc.setTextColor(11, 18, 32);
+    doc.setFontSize(10);
+    doc.text(`Veículo: ${d.veiculo}`, 15, y); y += 6;
+    doc.text(`Checklist: ${d.checklist}`, 15, y); y += 6;
+    doc.text(`Inspetor: ${d.inspetor}`, 15, y); y += 6;
+    doc.text(`Local: ${d.local || '—'}`, 15, y); y += 6;
+    doc.text(`Data: ${d.data}`, 15, y); y += 10;
+
+    doc.setFillColor(240, 244, 248);
+    doc.rect(15, y - 4, 180, 10, 'F');
+    doc.setFontSize(9);
+    doc.text(`Conformidade: ${d.percentual}% | ${d.conforme} conformes | ${d.naoConforme} não conformes`, 15, y + 2);
+    y += 14;
+
+    d.itens.forEach((item, idx) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      const r = d.respostas.find(x => x.item_id === item.id);
+      const ok = r?.resposta === 'conforme';
+      doc.setFillColor(ok ? 209 : 254, ok ? 250 : 226, ok ? 229 : 226);
+      doc.rect(15, y - 4, 180, 8, 'F');
+      doc.setTextColor(11, 18, 32);
+      doc.setFontSize(9);
+      doc.text(`${idx + 1}. ${item.pergunta}`, 17, y + 1);
+      doc.setTextColor(ok ? 4 : 153, ok ? 120 : 27, ok ? 87 : 27);
+      doc.setFont('helvetica', 'bold');
+      doc.text(ok ? 'OK' : 'NC', 190, y + 1, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      y += 10;
+    });
+
+    doc.save(`inspecao-${d.veiculo.split(' ')[0]}-${Date.now()}.pdf`);
+    mostrarToast('📄 PDF gerado!');
+  }
+
+  (async () => {
+    await carregarVeiculos();
+    await carregarChecklists();
+  })();
+</script>
+</body>
+</html>

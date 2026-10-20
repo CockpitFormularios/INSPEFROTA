@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Checklists | Inspeção Veicular</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" alt="Logo" class="loading-logo">
+  <p style="font-weight:600; font-size:14px;">Carregando checklists...</p>
+</div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-cipa-ativa.png" alt="Logo" class="brand-logo">
+  </div>
+  <div class="nav-label">Painel</div>
+  <nav>
+    <a href="dashboard.html"><span class="icon">📊</span> Dashboard</a>
+    <a href="veiculos.html"><span class="icon">🚗</span> Veículos</a>
+  </nav>
+  <div class="nav-label">Inspeções</div>
+  <nav>
+    <a href="inspecoes.html"><span class="icon">🔍</span> Ver Inspeções</a>
+    <a class="active"><span class="icon">📋</span> Checklists</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar-sm" id="userAvatar">?</div>
+    <div class="info">
+      <strong id="userName">—</strong>
+      <small>Gestor de Frota</small>
+    </div>
+    <button class="btn-logout" onclick="fazerLogout()" title="Sair">🚪</button>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <h2>Checklists de Inspeção
+      <span>Crie modelos de verificação (Pneus, Freios, Luzes...)</span>
+    </h2>
+    <div class="topbar-actions">
+      <button class="btn btn-gold" onclick="abrirModal()">➕ Novo Checklist</button>
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="listaChecklists" style="display: grid; gap: 12px;"></div>
+    <div id="vazio" class="empty-state" style="display:none;">
+      <div class="icon">📋</div>
+      <h3>Nenhum checklist criado ainda</h3>
+      <p>Crie seu primeiro modelo de inspeção. Você pode fazer checklists de Pneus, Freios, Luzes, Motor etc.</p>
+    </div>
+  </div>
+</main>
+
+<div class="modal-overlay" id="modalChecklist">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">Novo Checklist</h3>
+      <button class="close-btn" onclick="fecharModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Título <span>*</span></label>
+        <input type="text" class="form-control" id="titulo" placeholder="Ex: Inspeção Diária de Veículos">
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <input type="text" class="form-control" id="descricao" placeholder="Breve descrição">
+      </div>
+      <div class="form-group">
+        <label>Categoria</label>
+        <input type="text" class="form-control" id="categoria" placeholder="Ex: Diária, Semanal, Pneus" list="cats">
+        <datalist id="cats">
+          <option value="Diária">
+          <option value="Semanal">
+          <option value="Mensal">
+          <option value="Pneus">
+          <option value="Freios">
+          <option value="Luzes">
+          <option value="Motor">
+          <option value="Segurança">
+        </datalist>
+      </div>
+      <div class="form-group">
+        <label>Itens do Checklist <span>*</span></label>
+        <div id="itensContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        <button class="btn btn-secondary" style="margin-top: 10px; width: 100%; justify-content: center;" onclick="adicionarItem()">➕ Adicionar Pergunta</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarChecklist()">💾 Salvar Checklist</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://rvtquhqeivrhcdoreghu.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_kNF6eX_67yzNGWIyjwZvOw_0__qWSMW';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let checklists = [];
+  let itensTemp = [];
+  let editandoId = null;
+
+  let toastTimer;
+  function mostrarToast(msg, erro = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (erro ? 'error' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+  async function verificarLogin() {
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return false; }
+    const nome = session.user.email.split('@')[0];
+    document.getElementById('userName').textContent = nome.charAt(0).toUpperCase() + nome.slice(1);
+    document.getElementById('userAvatar').textContent = nome.substring(0, 2).toUpperCase();
+    return true;
+  }
+
+  async function fazerLogout() {
+    if (!confirm('Deseja sair?')) return;
+    await db.auth.signOut();
+    window.location.href = 'index.html';
+  }
+
+  async function carregarChecklists() {
+    const { data } = await db.from('veiculos_checklists').select('*').eq('ativo', true).order('created_at', { ascending: false });
+    checklists = data || [];
+    const lista = document.getElementById('listaChecklists');
+    const vazio = document.getElementById('vazio');
+    lista.innerHTML = '';
+
+    if (checklists.length === 0) {
+      vazio.style.display = 'block';
+      setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
+      return;
+    }
+    vazio.style.display = 'none';
+
+    checklists.forEach(c => {
+      const itens = Array.isArray(c.itens) ? c.itens.length : 0;
+      const card = document.createElement('div');
+      card.style.cssText = 'background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:18px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:0.22s;';
+      card.onmouseover = () => { card.style.borderColor = 'var(--green-600)'; card.style.transform = 'translateY(-2px)'; card.style.boxShadow = 'var(--shadow-md)'; };
+      card.onmouseout = () => { card.style.borderColor = 'var(--border)'; card.style.transform = 'translateY(0)'; card.style.boxShadow = 'none'; };
+      card.onclick = () => editarChecklist(c.id);
+      card.innerHTML = `
+        <div style="width:52px; height:52px; border-radius:14px; background: var(--green-100); display:flex; align-items:center; justify-content:center; font-size:26px; flex-shrink:0;">${c.icone || '📋'}</div>
+        <div style="flex:1;">
+          <h4 style="font-size:15px; font-weight:800; margin-bottom:4px;">${c.titulo}</h4>
+          <p style="font-size:12.5px; color:var(--text-soft);">${c.descricao || 'Sem descrição'}</p>
+        </div>
+        <span style="background: var(--green-100); color: var(--green-700); padding: 5px 12px; border-radius: 20px; font-size: 11.5px; font-weight: 800;">${itens} itens</span>
+      `;
+      lista.appendChild(card);
+    });
+
+    setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
+  }
+
+  function abrirModal(c = null) {
+    editandoId = c?.id || null;
+    itensTemp = c?.itens ? JSON.parse(JSON.stringify(c.itens)) : [];
+    document.getElementById('modalTitle').textContent = c ? 'Editar Checklist' : 'Novo Checklist';
+    document.getElementById('titulo').value = c?.titulo || '';
+    document.getElementById('descricao').value = c?.descricao || '';
+    document.getElementById('categoria').value = c?.categoria || '';
+    renderizarItens();
+    if (itensTemp.length === 0) adicionarItem();
+    document.getElementById('modalChecklist').classList.add('open');
+  }
+
+  function fecharModal() {
+    document.getElementById('modalChecklist').classList.remove('open');
+  }
+
+  function editarChecklist(id) {
+    const c = checklists.find(x => x.id === id);
+    if (c) abrirModal(c);
+  }
+
+  function gerarId() {
+    return 'item-' + Date.now() + '-' + Math.random().toString(36).substring(2, 8);
+  }
+
+  function adicionarItem() {
+    itensTemp.push({ id: gerarId(), pergunta: '' });
+    renderizarItens();
+  }
+
+  function removerItem(id) {
+    itensTemp = itensTemp.filter(i => i.id !== id);
+    renderizarItens();
+  }
+
+  function atualizarItem(id, valor) {
+    const item = itensTemp.find(i => i.id === id);
+    if (item) item.pergunta = valor;
+  }
+
+  function renderizarItens() {
+    const container = document.getElementById('itensContainer');
+    if (itensTemp.length === 0) {
+      container.innerHTML = '<p style="font-size: 12.5px; color: var(--text-soft); text-align: center; padding: 10px;">Nenhum item. Clique em "Adicionar Pergunta".</p>';
+      return;
+    }
+    container.innerHTML = '';
+    itensTemp.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex; gap:8px; align-items:center;';
+      row.innerHTML = `
+        <div style="width:28px; height:28px; border-radius:50%; background: var(--green-600); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0;">${idx + 1}</div>
+        <input type="text" class="form-control" style="flex:1;" placeholder="Digite a pergunta..." value="${(item.pergunta || '').replace(/"/g, '&quot;')}" oninput="atualizarItem('${item.id}', this.value)">
+        <button class="btn btn-danger" style="padding: 8px 12px; flex-shrink:0;" onclick="removerItem('${item.id}')">✕</button>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  async function salvarChecklist() {
+    const titulo = document.getElementById('titulo').value.trim();
+    const descricao = document.getElementById('descricao').value.trim();
+    const categoria = document.getElementById('categoria').value.trim();
+
+    if (!titulo) { mostrarToast('⚠️ Digite o título!', true); return; }
+    if (itensTemp.length === 0) { mostrarToast('⚠️ Adicione pelo menos 1 item!', true); return; }
+    const semPergunta = itensTemp.find(i => !i.pergunta.trim());
+    if (semPergunta) { mostrarToast('⚠️ Preencha todas as perguntas!', true); return; }
+
+    const dados = { titulo, descricao, categoria, itens: itensTemp, ativo: true };
+
+    try {
+      if (editandoId) {
+        await db.from('veiculos_checklists').update(dados).eq('id', editandoId);
+        mostrarToast('✅ Checklist atualizado!');
+      } else {
+        const { error } = await db.from('veiculos_checklists').insert([dados]);
+        if (error) throw error;
+        mostrarToast('✅ Checklist criado!');
+      }
+      fecharModal();
+      await carregarChecklists();
+    } catch (err) {
+      mostrarToast('❌ ' + err.message, true);
+    }
+  }
+
+  (async () => {
+    if (await verificarLogin()) await carregarChecklists();
+  })();
+</script>
+</body>
+</html>
