@@ -10,12 +10,14 @@
 </head>
 <body>
 
+<!-- ============ LOADING ============ -->
 <div class="loading-overlay" id="loadingOverlay">
   <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" alt="Logo" class="loading-logo">
   <p style="font-weight:600; font-size:14px;">Carregando painel...</p>
 </div>
 
-<aside class="sidebar">
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar" id="sidebar">
   <div class="brand">
     <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-cipa-ativa.png" alt="Logo" class="brand-logo">
   </div>
@@ -39,17 +41,20 @@
   </div>
 </aside>
 
+<!-- ============ MAIN ============ -->
 <main class="main">
   <div class="topbar">
     <h2>Painel de Inspeção Veicular
       <span id="saudacao">Bem-vindo ao centro de comando da frota.</span>
     </h2>
     <div class="topbar-actions">
-      <button class="btn btn-gold" onclick="window.location.href='checklistsCIPEIROS.html'">➕ Nova Inspeção</button>
+      <button class="btn btn-secondary" onclick="carregarDados()">🔄 Atualizar</button>
+      <button class="btn btn-gold" onclick="window.open('inspetor.html', '_blank')">➕ Nova Inspeção (Inspetor)</button>
       <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
     </div>
   </div>
 
+  <!-- CARD GESTÃO -->
   <div class="gestao-card">
     <div class="gestao-card-info">
       <div class="gestao-card-icon">🚗</div>
@@ -66,6 +71,7 @@
     </div>
   </div>
 
+  <!-- KPIs -->
   <section class="kpis">
     <div class="kpi" onclick="window.location.href='veiculos.html'">
       <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" class="kpi-bg-icon" alt="">
@@ -100,6 +106,7 @@
     </div>
   </section>
 
+  <!-- ATALHOS -->
   <div class="grid-3">
     <div class="atalho-card" onclick="window.location.href='veiculos.html'">
       <div class="atalho-icon veiculos">🚗</div>
@@ -124,6 +131,7 @@
     </div>
   </div>
 
+  <!-- ÚLTIMAS INSPEÇÕES -->
   <section id="secaoInspecoes" style="display:none;">
     <div class="card">
       <div class="card-header">
@@ -172,23 +180,28 @@
 
   async function carregarDados() {
     try {
+      // 1. Veículos
       const { count: cVeiculos } = await db.from('veiculos').select('*', { count: 'exact', head: true }).eq('ativo', true);
       document.getElementById('kpiVeiculos').textContent = cVeiculos || 0;
       document.getElementById('kpiVeiculosTrend').textContent = cVeiculos > 0 ? `✅ ${cVeiculos} ativos` : '⚠️ Nenhum cadastrado';
 
+      // 2. Checklists
       const { count: cChecklists } = await db.from('veiculos_checklists').select('*', { count: 'exact', head: true }).eq('ativo', true);
       document.getElementById('kpiChecklists').textContent = cChecklists || 0;
       document.getElementById('kpiChecklistsTrend').textContent = cChecklists > 0 ? `📋 ${cChecklists} modelo${cChecklists > 1 ? 's' : ''}` : '⚠️ Nenhum criado';
 
+      // 3. Inspeções
       const { count: cInspecoes } = await db.from('veiculos_inspecoes').select('*', { count: 'exact', head: true });
       document.getElementById('kpiInspecoes').textContent = cInspecoes || 0;
       document.getElementById('kpiInspecoesTrend').textContent = cInspecoes > 0 ? `✅ ${cInspecoes} realizadas` : '📭 Nenhuma ainda';
 
+      // 4. Não Conformidades (soma total)
       const { data: insp } = await db.from('veiculos_inspecoes').select('total_nao_conformes');
       const totalNC = (insp || []).reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
       document.getElementById('kpiNC').textContent = totalNC;
       document.getElementById('kpiNCTrend').textContent = totalNC > 0 ? '⚠️ Atenção necessária' : '✅ Tudo em ordem';
 
+      // Últimas 5 inspeções
       if (cInspecoes > 0) {
         const { data: ultimas } = await db.from('veiculos_inspecoes').select('*').order('created_at', { ascending: false }).limit(5);
         if (ultimas && ultimas.length > 0) {
@@ -199,15 +212,15 @@
             const pct = parseFloat(i.percentual_conformidade) || 0;
             const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
             const li = document.createElement('li');
-            li.style.cssText = 'display:flex; align-items:center; gap:14px; padding: 14px 0; border-bottom: 1px solid var(--border); cursor:pointer;';
+            li.style.cssText = 'display:flex; align-items:center; gap:14px; padding: 14px 0; border-bottom: 1px solid var(--border); cursor:pointer; transition: padding 0.2s;';
             li.onclick = () => window.location.href = 'inspecoes.html';
             li.onmouseover = () => li.style.paddingLeft = '6px';
             li.onmouseout = () => li.style.paddingLeft = '0';
             li.innerHTML = `
-              <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--green-500),var(--green-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;">${(i.veiculo_placa || 'XX').substring(0,2).toUpperCase()}</div>
+              <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--green-500),var(--green-700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;flex-shrink:0;">${(i.veiculo_placa || 'XX').substring(0,2).toUpperCase()}</div>
               <div style="flex:1;min-width:0;">
-                <strong style="display:block;font-size:13.5px;font-weight:700;margin-bottom:2px;">${i.veiculo_placa} - ${i.veiculo_modelo}</strong>
-                <small style="color:var(--text-soft);font-size:11.5px;">${i.checklist_titulo} • ${i.inspetor_nome} • ${new Date(i.created_at).toLocaleDateString('pt-BR')}</small>
+                <strong style="display:block;font-size:13.5px;font-weight:700;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.veiculo_placa} - ${i.veiculo_modelo}</strong>
+                <small style="color:var(--text-soft);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${i.checklist_titulo} • ${i.inspetor_nome} • ${new Date(i.created_at).toLocaleDateString('pt-BR')}</small>
               </div>
               <span class="badge ${cls}">${pct.toFixed(0)}%</span>
             `;
