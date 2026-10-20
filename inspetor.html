@@ -12,7 +12,6 @@
   .texto-livre textarea { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 11px; font-size: 13.5px; font-family: inherit; resize: vertical; min-height: 100px; outline: none; transition: all 0.2s; }
   .texto-livre textarea:focus { border-color: var(--green-600); box-shadow: 0 0 0 4px rgba(46,139,87,0.1); }
   .fotos-section { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 20px; }
-  .fotos-section.erro-foto { border-color: var(--danger); background: #fff5f5; }
   .btn-add-foto { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; background: #fff; border: 2px solid var(--green-600); border-radius: 11px; cursor: pointer; font-size: 13.5px; font-weight: 700; color: var(--green-700); transition: all 0.22s; }
   .btn-add-foto:hover { background: var(--green-600); color: #fff; transform: translateY(-2px); }
   .fotos-preview { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 14px; }
@@ -20,8 +19,6 @@
   .foto-item img { width: 100%; height: 100%; object-fit: cover; }
   .foto-remove { position: absolute; top: 5px; right: 5px; width: 26px; height: 26px; border-radius: 50%; background: var(--danger); color: #fff; border: 2px solid #fff; cursor: pointer; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
   .foto-uploading { position: absolute; inset: 0; background: rgba(0,0,0,0.6); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-  .alerta-fotos { display: none; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 14px; background: var(--danger-soft); color: #991b1b; border-radius: 10px; font-size: 13px; font-weight: 600; }
-  .alerta-fotos.show { display: flex; }
 </style>
 </head>
 <body style="display:block;">
@@ -39,63 +36,91 @@
 
 <div style="max-width: 800px; margin: 0 auto; padding: 24px 16px 80px;">
 
+  <!-- ETAPA 1: VEÍCULO -->
   <div class="card" id="step1">
     <h2 style="text-align:center; font-size: 22px; font-weight:800; margin-bottom: 8px;">🚗 Selecione o Veículo</h2>
     <p style="text-align:center; font-size: 13px; color: var(--text-soft); margin-bottom: 22px;">Escolha a placa do veículo que vai inspecionar</p>
     <div id="listaVeiculos" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;"></div>
-    <div id="vazioVeiculos" class="empty-state" style="display:none;"><div class="icon">🚗</div><h3>Nenhum veículo disponível</h3><p>O gestor precisa cadastrar os veículos.</p></div>
+    <div id="vazioVeiculos" class="empty-state" style="display:none;">
+      <div class="icon">🚗</div>
+      <h3>Nenhum veículo disponível</h3>
+      <p>O gestor precisa cadastrar os veículos no painel administrativo.</p>
+    </div>
   </div>
 
+  <!-- ETAPA 2: CHECKLIST -->
   <div class="card" id="step2" style="display:none;">
     <h2 style="text-align:center; font-size: 22px; font-weight:800; margin-bottom: 8px;">📋 Escolha o Checklist</h2>
     <p style="text-align:center; font-size: 13px; color: var(--text-soft); margin-bottom: 22px;">Selecione o modelo de inspeção</p>
     <div id="listaChecklists" style="display:grid; gap: 12px;"></div>
-    <div id="vazioChecklists" class="empty-state" style="display:none;"><div class="icon">📋</div><h3>Nenhum checklist disponível</h3><p>O gestor precisa criar os checklists.</p></div>
+    <div id="vazioChecklists" class="empty-state" style="display:none;">
+      <div class="icon">📋</div>
+      <h3>Nenhum checklist disponível</h3>
+      <p>O gestor precisa criar os checklists no painel administrativo.</p>
+    </div>
     <button class="btn btn-secondary" style="margin-top: 16px; width:100%; justify-content: center;" onclick="voltarPasso1()">← Trocar Veículo</button>
   </div>
 
+  <!-- ETAPA 3: INSPEÇÃO -->
   <div id="step3" style="display:none;">
     <div class="gestao-card" style="padding: 20px;">
       <div class="gestao-card-info">
         <div class="gestao-card-icon" style="width: 52px; height: 52px; font-size: 24px;">🚗</div>
-        <div class="gestao-card-text"><h3 style="font-size: 18px;" id="veiculoSel">—</h3><p style="font-size: 12.5px;" id="checklistSel">—</p></div>
+        <div class="gestao-card-text">
+          <h3 style="font-size: 18px;" id="veiculoSel">—</h3>
+          <p style="font-size: 12.5px;" id="checklistSel">—</p>
+        </div>
       </div>
     </div>
 
     <div class="card">
       <div class="form-row">
-        <div class="form-group"><label>Seu Nome (opcional)</label><input type="text" class="form-control" id="inspetorNome" placeholder="Deixe em branco se preferir"></div>
-        <div class="form-group"><label>Local da Inspeção</label><input type="text" class="form-control" id="localInsp" placeholder="Ex: Pátio, Garagem"></div>
+        <div class="form-group">
+          <label>Seu Nome (opcional)</label>
+          <input type="text" class="form-control" id="inspetorNome" placeholder="Deixe em branco se preferir">
+        </div>
+        <div class="form-group">
+          <label>Local da Inspeção</label>
+          <input type="text" class="form-control" id="localInsp" placeholder="Ex: Pátio, Garagem">
+        </div>
       </div>
     </div>
 
     <div class="progress-bar-wrap">
-      <div class="progress-info"><span>Progresso dos itens</span><span id="progresso">0 / 0</span></div>
-      <div class="progress-bar"><div class="progress-fill" id="progressBar"></div></div>
+      <div class="progress-info">
+        <span>Progresso dos itens</span>
+        <span id="progresso">0 / 0</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+      </div>
     </div>
 
     <div id="itensInspecao"></div>
 
-    <div class="fotos-section" id="fotosSection">
+    <!-- SEÇÃO DE FOTOS (OPCIONAL AGORA) -->
+    <div class="fotos-section">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom: 6px;">
-        <div style="font-size: 15px; font-weight: 800;">📸 Fotos da Inspeção <span style="color: var(--danger);">*</span></div>
-        <div style="font-size: 12px; font-weight: 700; color: var(--text-soft); background: var(--bg); padding: 4px 10px; border-radius: 20px;" id="contadorFotos">0 de 3 fotos obrigatórias</div>
+        <div style="font-size: 15px; font-weight: 800;">📸 Fotos da Inspeção (Opcional)</div>
+        <div style="font-size: 12px; font-weight: 700; color: var(--text-soft); background: var(--bg); padding: 4px 10px; border-radius: 20px;" id="contadorFotos">0 fotos anexadas</div>
       </div>
-      <p style="font-size: 12.5px; color: var(--text-soft); margin-bottom: 14px;">Anexe no mínimo <strong>3 fotos</strong>. (Frente, lateral, traseira, avarias, etc).</p>
+      <p style="font-size: 12.5px; color: var(--text-soft); margin-bottom: 14px;">Anexe fotos do veículo (frente, lateral, traseira, avarias, etc.). Máx 5MB cada.</p>
+      
       <button type="button" class="btn-add-foto" onclick="document.getElementById('fotoInput').click()" id="btnAddFoto">📷 Adicionar Foto</button>
       <input type="file" id="fotoInput" accept="image/*" capture="environment" multiple hidden onchange="adicionarFotos(event)">
-      <div class="alerta-fotos" id="alertaFotos">⚠️ Você precisa anexar no mínimo 3 fotos para liberar o envio.</div>
+      
       <div class="fotos-preview" id="fotosPreview"></div>
     </div>
 
-    <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top: 20px; padding: 16px;" onclick="enviarInspecao()" id="btnEnviar" disabled>⏳ Preencha os itens e anexe 3 fotos</button>
+    <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top: 20px; padding: 16px;" onclick="enviarInspecao()" id="btnEnviar" disabled>⏳ Preencha todos os itens</button>
     <button class="btn btn-secondary" style="width:100%; justify-content:center; margin-top: 10px;" onclick="voltarPasso2()">← Trocar Checklist</button>
   </div>
 
+  <!-- ETAPA 4: SUCESSO -->
   <div class="card" id="step4" style="display:none; text-align:center; padding: 50px 30px;">
     <div style="width: 100px; height: 100px; margin: 0 auto 24px; background: linear-gradient(135deg, var(--success-soft), #a7f3d0); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 50px;">✅</div>
     <h2 style="font-size: 26px; font-weight:800; margin-bottom: 10px;">Inspeção Enviada!</h2>
-    <p style="color: var(--text-soft); margin-bottom: 26px; font-size: 14.5px;">A inspeção foi registrada com sucesso.</p>
+    <p style="color: var(--text-soft); margin-bottom: 26px; font-size: 14.5px;">A inspeção foi registrada com sucesso e já está disponível para o gestor.</p>
     <div id="resumoFinal" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 26px;"></div>
     <button class="btn btn-primary" style="width:100%; justify-content:center; margin-bottom: 10px;" onclick="baixarPDF()">📄 Baixar PDF</button>
     <button class="btn btn-gold" style="width:100%; justify-content:center;" onclick="location.reload()">🔄 Nova Inspeção</button>
@@ -111,27 +136,44 @@
   const SUPABASE_KEY = 'sb_publishable_kNF6eX_67yzNGWIyjwZvOw_0__qWSMW';
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const MIN_FOTOS = 3;
-  let veiculos = [], checklists = [], veiculoSel = null, checklistSel = null, respostas = {}, fotos = [], ultimaInspecao = null;
+  let veiculos = [];
+  let checklists = [];
+  let veiculoSel = null;
+  let checklistSel = null;
+  let respostas = {};
+  let fotos = []; // Continua existindo, mas não é mais obrigatório
+  let ultimaInspecao = null;
 
   let toastTimer;
   function mostrarToast(msg, erro = false) {
     const t = document.getElementById('toast');
-    t.textContent = msg; t.className = 'toast show ' + (erro ? 'error' : '');
-    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    t.textContent = msg;
+    t.className = 'toast show ' + (erro ? 'error' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  function esconderLoading() { const o = document.getElementById('loadingOverlay'); if (o) o.classList.add('hidden'); }
-  function irParaEtapa(n) { ['step1','step2','step3','step4'].forEach(id => document.getElementById(id).style.display = 'none'); document.getElementById('step' + n).style.display = 'block'; window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  function esconderLoading() {
+    const o = document.getElementById('loadingOverlay');
+    if (o) o.classList.add('hidden');
+  }
+
+  function irParaEtapa(n) {
+    ['step1','step2','step3','step4'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('step' + n).style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   async function carregarVeiculos() {
     const { data } = await db.from('veiculos').select('*').eq('ativo', true).order('placa');
     veiculos = data || [];
     const lista = document.getElementById('listaVeiculos');
     if (veiculos.length === 0) { lista.innerHTML = ''; document.getElementById('vazioVeiculos').style.display = 'block'; return; }
-    document.getElementById('vazioVeiculos').style.display = 'none'; lista.innerHTML = '';
+    document.getElementById('vazioVeiculos').style.display = 'none';
+    lista.innerHTML = '';
     veiculos.forEach(v => {
-      const card = document.createElement('div'); card.className = 'veiculo-card';
+      const card = document.createElement('div');
+      card.className = 'veiculo-card';
       card.onclick = () => { veiculoSel = v; irParaEtapa(2); };
       card.innerHTML = `<div class="veiculo-icon-wrap">🚗</div><div class="veiculo-placa">${v.placa}</div><div class="veiculo-modelo">${v.setor ? 'Setor: ' + v.setor : 'Sem setor'}</div>`;
       lista.appendChild(card);
@@ -143,10 +185,12 @@
     checklists = data || [];
     const lista = document.getElementById('listaChecklists');
     if (checklists.length === 0) { lista.innerHTML = ''; document.getElementById('vazioChecklists').style.display = 'block'; return; }
-    document.getElementById('vazioChecklists').style.display = 'none'; lista.innerHTML = '';
+    document.getElementById('vazioChecklists').style.display = 'none';
+    lista.innerHTML = '';
     checklists.forEach(c => {
       const itens = Array.isArray(c.itens) ? c.itens.length : 0;
-      const btn = document.createElement('button'); btn.style.cssText = 'background:#fff; border:2px solid var(--border); border-radius:14px; padding:18px; display:flex; align-items:center; gap:14px; cursor:pointer; text-align:left; font-family:inherit; transition:0.22s; width:100%;';
+      const btn = document.createElement('button');
+      btn.style.cssText = 'background:#fff; border:2px solid var(--border); border-radius:14px; padding:18px; display:flex; align-items:center; gap:14px; cursor:pointer; text-align:left; font-family:inherit; transition:0.22s; width:100%;';
       btn.onclick = () => selecionarChecklist(c);
       btn.innerHTML = `<div style="width:52px; height:52px; background: var(--green-100); border-radius: 14px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">📋</div><div style="flex:1;"><h4 style="font-size:15px; font-weight:800; margin-bottom:4px;">${c.titulo}</h4><p style="font-size:12.5px; color:var(--text-soft);">${c.descricao || 'Sem descrição'}</p></div><span style="background: var(--green-100); color: var(--green-700); padding: 5px 12px; border-radius: 20px; font-size:11.5px; font-weight:800;">${itens} itens</span>`;
       lista.appendChild(btn);
@@ -154,20 +198,35 @@
   }
 
   function selecionarChecklist(c) {
-    checklistSel = c; respostas = {}; fotos = []; document.getElementById('fotosPreview').innerHTML = '';
+    checklistSel = c;
+    respostas = {};
+    fotos = [];
+    document.getElementById('fotosPreview').innerHTML = '';
     document.getElementById('veiculoSel').textContent = veiculoSel.placa;
     document.getElementById('checklistSel').textContent = c.titulo;
-    renderizarItens(); atualizarStatusBotao(); irParaEtapa(3);
+    renderizarItens();
+    atualizarStatusBotao();
+    irParaEtapa(3);
   }
 
   function voltarPasso1() { irParaEtapa(1); }
-  function voltarPasso2() { if (!confirm('Voltar e trocar o checklist? As respostas e fotos serão perdidas.')) return; respostas = {}; fotos = []; irParaEtapa(2); }
+  function voltarPasso2() {
+    if (!confirm('Voltar e trocar o checklist? As respostas e fotos serão perdidas.')) return;
+    respostas = {}; fotos = []; irParaEtapa(2);
+  }
 
   function renderizarItens() {
-    const container = document.getElementById('itensInspecao'); container.innerHTML = '';
+    const container = document.getElementById('itensInspecao');
+    container.innerHTML = '';
     checklistSel.itens.forEach((item, idx) => {
-      const block = document.createElement('div'); block.className = 'item-block'; block.id = 'item-' + item.id;
-      let inputHtml = item.tipo === 'texto' ? `<div class="texto-livre"><textarea placeholder="Digite sua resposta aqui..." oninput="responderTexto('${item.id}', this.value)"></textarea></div>` : `<div class="resp-options"><button class="resp-opt conforme" onclick="responder('${item.id}', 'conforme', this)">✅ Conforme</button><button class="resp-opt nao-conforme" onclick="responder('${item.id}', 'nao_conforme', this)">❌ Não Conforme</button></div>`;
+      const block = document.createElement('div');
+      block.className = 'item-block';
+      block.id = 'item-' + item.id;
+      
+      let inputHtml = item.tipo === 'texto' 
+        ? `<div class="texto-livre"><textarea placeholder="Digite sua resposta aqui..." oninput="responderTexto('${item.id}', this.value)"></textarea></div>`
+        : `<div class="resp-options"><button class="resp-opt conforme" onclick="responder('${item.id}', 'conforme', this)">✅ Conforme</button><button class="resp-opt nao-conforme" onclick="responder('${item.id}', 'nao_conforme', this)">❌ Não Conforme</button></div>`;
+
       block.innerHTML = `<div class="item-header"><div class="item-num">${idx + 1}</div><div class="item-pergunta">${item.pergunta}</div></div>${inputHtml}`;
       container.appendChild(block);
     });
@@ -176,13 +235,18 @@
 
   function responder(itemId, valor, btn) {
     const block = document.getElementById('item-' + itemId);
-    block.querySelectorAll('.resp-opt').forEach(b => b.classList.remove('selected')); btn.classList.add('selected');
-    respostas[itemId] = valor; block.classList.remove('respondido-conforme', 'respondido-nao-conforme');
+    block.querySelectorAll('.resp-opt').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    respostas[itemId] = valor;
+    block.classList.remove('respondido-conforme', 'respondido-nao-conforme');
     block.classList.add(valor === 'conforme' ? 'respondido-conforme' : 'respondido-nao-conforme');
     atualizarProgresso();
   }
 
-  function responderTexto(itemId, valor) { respostas[itemId] = valor; atualizarProgresso(); }
+  function responderTexto(itemId, valor) {
+    respostas[itemId] = valor;
+    atualizarProgresso();
+  }
 
   function atualizarProgresso() {
     const total = checklistSel.itens.length;
@@ -195,15 +259,21 @@
   function atualizarStatusBotao() {
     const total = checklistSel.itens.length;
     const respondidos = Object.keys(respostas).filter(k => respostas[k] !== '' && respostas[k] !== undefined).length;
-    const btn = document.getElementById('btnEnviar'); const alerta = document.getElementById('alertaFotos'); const section = document.getElementById('fotosSection');
-    const itensOk = respondidos >= total; const fotosOk = fotos.length >= MIN_FOTOS;
-
-    if (fotosOk) { section.classList.remove('erro-foto'); alerta.classList.remove('show'); } else { section.classList.add('erro-foto'); alerta.classList.add('show'); }
-
-    if (itensOk && fotosOk) { btn.disabled = false; btn.textContent = '✅ Finalizar e Enviar Inspeção'; }
-    else { btn.disabled = true; if (!itensOk && !fotosOk) btn.textContent = `⏳ Faltam ${total - respondidos} itens e ${MIN_FOTOS - fotos.length} fotos`; else if (!itensOk) btn.textContent = `⏳ Faltam ${total - respondidos} itens`; else btn.textContent = `⏳ Faltam ${MIN_FOTOS - fotos.length} fotos obrigatórias`; }
+    const btn = document.getElementById('btnEnviar');
+    
+    // Botão só depende dos itens, fotos são opcionais
+    if (respondidos >= total) {
+      btn.disabled = false;
+      btn.textContent = '✅ Finalizar e Enviar Inspeção';
+    } else {
+      btn.disabled = true;
+      btn.textContent = `⏳ Faltam ${total - respondidos} itens`;
+    }
   }
 
+  // ============================================================
+  // 📸 UPLOAD DE FOTOS (Opcional)
+  // ============================================================
   async function uploadFoto(file) {
     const ext = file.name.split('.').pop().toLowerCase();
     const nomeArquivo = `insp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
@@ -214,50 +284,106 @@
   }
 
   async function adicionarFotos(event) {
-    const files = Array.from(event.target.files || []); if (files.length === 0) return;
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
     for (const file of files) {
       if (file.size > 5 * 1024 * 1024) { mostrarToast(`⚠️ "${file.name}" é maior que 5MB`, true); continue; }
-      const preview = document.getElementById('fotosPreview'); const tempId = 'temp-' + Date.now() + '-' + Math.random();
-      const tempDiv = document.createElement('div'); tempDiv.className = 'foto-item'; tempDiv.id = tempId;
-      const reader = new FileReader(); reader.onload = e => { tempDiv.innerHTML = `<img src="${e.target.result}"><div class="foto-uploading">⏳</div>`; }; reader.readAsDataURL(file); preview.appendChild(tempDiv);
+
+      const preview = document.getElementById('fotosPreview');
+      const tempId = 'temp-' + Date.now() + '-' + Math.random();
+      const tempDiv = document.createElement('div');
+      tempDiv.className = 'foto-item';
+      tempDiv.id = tempId;
+
+      const reader = new FileReader();
+      reader.onload = e => { tempDiv.innerHTML = `<img src="${e.target.result}"><div class="foto-uploading">⏳</div>`; };
+      reader.readAsDataURL(file);
+      preview.appendChild(tempDiv);
+
       try {
-        const url = await uploadFoto(file); fotos.push(url);
+        const url = await uploadFoto(file);
+        fotos.push(url);
         tempDiv.innerHTML = `<img src="${url}"><button type="button" class="foto-remove" onclick="removerFoto('${url}', this)">✕</button>`;
-        document.getElementById('contadorFotos').textContent = `${fotos.length} de ${MIN_FOTOS} fotos obrigatórias`;
-        atualizarStatusBotao();
-      } catch (err) { console.error(err); tempDiv.remove(); mostrarToast('❌ ' + err.message, true); }
+        document.getElementById('contadorFotos').textContent = `${fotos.length} fotos anexadas`;
+      } catch (err) {
+        console.error(err);
+        tempDiv.remove();
+        mostrarToast('❌ ' + err.message, true);
+      }
     }
     event.target.value = '';
   }
 
-  function removerFoto(url, btn) { fotos = fotos.filter(u => u !== url); btn.closest('.foto-item').remove(); document.getElementById('contadorFotos').textContent = `${fotos.length} de ${MIN_FOTOS} fotos obrigatórias`; atualizarStatusBotao(); }
+  function removerFoto(url, btn) {
+    fotos = fotos.filter(u => u !== url);
+    btn.closest('.foto-item').remove();
+    document.getElementById('contadorFotos').textContent = `${fotos.length} fotos anexadas`;
+  }
 
+  // ============================================================
+  // 🚀 ENVIAR INSPEÇÃO
+  // ============================================================
   async function enviarInspecao() {
-    if (fotos.length < MIN_FOTOS) { mostrarToast(`⚠️ Anexe no mínimo ${MIN_FOTOS} fotos!`, true); return; }
-    const nomeDigitado = document.getElementById('inspetorNome').value.trim(); const nomeFinal = nomeDigitado || 'Inspetor Anônimo';
-    const itens = checklistSel.itens; let conforme = 0, naoConforme = 0, textos = 0;
+    const nomeDigitado = document.getElementById('inspetorNome').value.trim();
+    const nomeFinal = nomeDigitado || 'Inspetor Anônimo';
+
+    const itens = checklistSel.itens;
+    let conforme = 0, naoConforme = 0, textos = 0;
     const respostasArr = itens.map(item => {
       const r = respostas[item.id] || '';
-      if (r === 'conforme') conforme++; else if (r === 'nao_conforme') naoConforme++; else if (item.tipo === 'texto') textos++;
+      if (r === 'conforme') conforme++;
+      else if (r === 'nao_conforme') naoConforme++;
+      else if (item.tipo === 'texto') textos++;
       return { item_id: item.id, pergunta: item.pergunta, tipo: item.tipo || 'conforme', resposta: r };
     });
-    const itensAvaliaveis = itens.length - textos; const percentual = itensAvaliaveis > 0 ? ((conforme / itensAvaliaveis) * 100).toFixed(2) : 100;
-    const btn = document.getElementById('btnEnviar'); btn.disabled = true; btn.textContent = '⏳ Enviando...';
+
+    const itensAvaliaveis = itens.length - textos;
+    const percentual = itensAvaliaveis > 0 ? ((conforme / itensAvaliaveis) * 100).toFixed(2) : 100;
+
+    const btn = document.getElementById('btnEnviar');
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando...';
+
     try {
       const { error } = await db.from('veiculos_inspecoes').insert([{
-        checklist_id: checklistSel.id, checklist_titulo: checklistSel.titulo, checklist_categoria: checklistSel.categoria, inspetor_nome: nomeFinal,
-        veiculo_placa: veiculoSel.placa, veiculo_modelo: 'N/A', local_inspecionado: document.getElementById('localInsp').value.trim(),
-        respostas: respostasArr, fotos: fotos, total_itens: itens.length, total_conformes: conforme, total_nao_conformes: naoConforme, percentual_conformidade: percentual, status: 'concluida'
+        checklist_id: checklistSel.id,
+        checklist_titulo: checklistSel.titulo,
+        checklist_categoria: checklistSel.categoria,
+        inspetor_nome: nomeFinal,
+        veiculo_placa: veiculoSel.placa,
+        veiculo_modelo: 'N/A',
+        local_inspecionado: document.getElementById('localInsp').value.trim(),
+        respostas: respostasArr,
+        fotos: fotos, // Salva o array de fotos (pode ser vazio)
+        total_itens: itens.length,
+        total_conformes: conforme,
+        total_nao_conformes: naoConforme,
+        percentual_conformidade: percentual,
+        status: 'concluida'
       }]);
       if (error) throw error;
-      ultimaInspecao = { veiculo: veiculoSel.placa, checklist: checklistSel.titulo, inspetor: nomeFinal, local: document.getElementById('localInsp').value.trim(), data: new Date().toLocaleString('pt-BR'), itens: itens, respostas: respostasArr, fotos: fotos, conforme, naoConforme, percentual };
+
+      ultimaInspecao = {
+        veiculo: veiculoSel.placa, checklist: checklistSel.titulo, inspetor: nomeFinal,
+        local: document.getElementById('localInsp').value.trim(), data: new Date().toLocaleString('pt-BR'),
+        itens: itens, respostas: respostasArr, fotos: fotos, conforme, naoConforme, percentual
+      };
+
       document.getElementById('resumoFinal').innerHTML = `
         <div style="background: var(--success-soft); padding:16px; border-radius:12px; border:1.5px solid var(--success);"><div style="font-size:26px; font-weight:800; color:#047857;">${conforme}</div><div style="font-size:11px; font-weight:700; color:var(--text-soft);">CONFORMES</div></div>
         <div style="background: var(--danger-soft); padding:16px; border-radius:12px; border:1.5px solid var(--danger);"><div style="font-size:26px; font-weight:800; color:#991b1b;">${naoConforme}</div><div style="font-size:11px; font-weight:700; color:var(--text-soft);">NÃO CONF.</div></div>
         <div style="background: var(--bg); padding:16px; border-radius:12px; border:1.5px solid var(--border);"><div style="font-size:26px; font-weight:800;">${percentual}%</div><div style="font-size:11px; font-weight:700; color:var(--text-soft);">CONFORMIDADE</div></div>
       `;
-      irParaEtapa(4); mostrarToast('✅ Inspeção enviada com sucesso!');
-    } catch (err) { console.error(err); mostrarToast('❌ ' + err.message, true); btn.disabled = false; atualizarStatusBotao(); }
+
+      irParaEtapa(4);
+      mostrarToast('✅ Inspeção enviada com sucesso!');
+    } catch (err) {
+      console.error(err);
+      mostrarToast('❌ ' + err.message, true);
+      btn.disabled = false;
+      atualizarStatusBotao();
+    }
   }
 
   // ============================================================
@@ -270,11 +396,12 @@
       img.onload = () => {
         try {
           const canvas = document.createElement('canvas');
-          const maxW = 600; // Reduzi a resolução para aliviar o peso
+          const maxW = 600;
           const scale = img.naturalWidth > maxW ? maxW / img.naturalWidth : 1;
-          canvas.width = img.naturalWidth * scale; canvas.height = img.naturalHeight * scale;
+          canvas.width = img.naturalWidth * scale;
+          canvas.height = img.naturalHeight * scale;
           canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', 0.6)); // Qualidade 60% para compactar
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
         } catch (e) { reject(e); }
       };
       img.onerror = () => reject(new Error('Falha'));
@@ -288,14 +415,12 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
     const d = ultimaInspecao;
-    const pageH = 297;
-    const margin = 10; // Margem menor para ganhar espaço
+    const margin = 10;
     let y = 0;
 
-    // === CABEÇALHO COMPACTO ===
+    // === CABEÇALHO ===
     doc.setFillColor(10, 31, 19);
-    doc.rect(0, 0, 210, 18, 'F'); // Altura do cabeçalho reduzida
-    
+    doc.rect(0, 0, 210, 18, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
@@ -305,7 +430,6 @@
     doc.setTextColor(11, 18, 32);
     doc.setFontSize(9);
     
-    // Informações em duas colunas para economizar espaço
     doc.text(`Veiculo: ${d.veiculo}`, margin, y); 
     doc.text(`Data: ${d.data}`, 120, y); 
     y += 5;
@@ -314,14 +438,13 @@
     y += 5;
     doc.text(`Local: ${d.local || '-'}`, margin, y); 
     
-    // Caixa de status compacta
     doc.setFillColor(240, 244, 248);
     doc.rect(120, y - 4, 80, 6, 'F');
     doc.setFontSize(9);
     doc.text(`Conformidade: ${d.percentual}% | ${d.conforme} OK | ${d.naoConforme} NC`, 160, y + 0.5, { align: 'center' });
     y += 10;
 
-    // === ITENS (Ultracompactos) ===
+    // === ITENS ===
     d.itens.forEach((item, idx) => {
       const r = d.respostas.find(x => x.item_id === item.id);
       const isTexto = item.tipo === 'texto';
@@ -332,7 +455,7 @@
         const linhas = doc.splitTextToSize(textoLimpo || 'Sem resposta', 175);
         const altura = Math.max(10, linhas.length * 4 + 6);
 
-        if (y + altura > 280) { doc.addPage(); y = 15; } // Se passar do limite, nova página
+        if (y + altura > 280) { doc.addPage(); y = 15; }
 
         doc.setFillColor(239, 246, 255); doc.rect(margin, y - 3, 190, altura, 'F');
         doc.setFillColor(59, 130, 246); doc.rect(margin, y - 3, 1.5, altura, 'F');
@@ -346,20 +469,19 @@
         doc.setTextColor(11, 18, 32); doc.setFontSize(8.5); doc.text(`${idx + 1}. ${item.pergunta}`, margin + 3, y + 1);
         doc.setTextColor(ok ? 4 : 153, ok ? 120 : 27, ok ? 87 : 27); doc.setFont('helvetica', 'bold');
         doc.text(ok ? 'OK' : 'NC', 195, y + 1, { align: 'right' }); doc.setFont('helvetica', 'normal');
-        y += 7.5; // Espaçamento entre itens bem pequeno
+        y += 7.5;
       }
     });
 
-    // === FOTOS (Grade compacta) ===
+    // === FOTOS (Só gera a seção se houver fotos) ===
     if (d.fotos && d.fotos.length > 0) {
-      // Se não couber a primeira linha de fotos, joga pra página 2
       if (y + 30 > 280) { doc.addPage(); y = 15; } 
       else { y += 4; }
 
       doc.setTextColor(11, 18, 32); doc.setFontSize(10); doc.setFont('helvetica', 'bold');
       doc.text('FOTOS DA INSPECAO', margin, y); y += 4;
 
-      const colunas = 4; // 4 colunas para ficar bem pequeno
+      const colunas = 4;
       const gap = 2;
       const larguraFoto = (190 - gap * (colunas - 1)) / colunas;
       const alturaFoto = larguraFoto * 0.75;
