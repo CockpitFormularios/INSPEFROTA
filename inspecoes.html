@@ -215,11 +215,14 @@
     lista.forEach(i => {
       const pct = parseFloat(i.percentual_conformidade) || 0;
       const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
+      // Verifica se tem fotos para mostrar um ícone na tabela
+      const temFotos = i.fotos && i.fotos.length > 0 ? `📸 ${i.fotos.length}` : '';
+      
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><strong>${formatarData(i.created_at)}</strong></td>
         <td><strong>${i.veiculo_placa}</strong></td>
-        <td>${i.checklist_titulo}</td>
+        <td>${i.checklist_titulo} <span style="font-size:10px; color:var(--info); font-weight:700; margin-left:5px;">${temFotos}</span></td>
         <td>${i.inspetor_nome}</td>
         <td><span class="badge ${cls}">${pct.toFixed(0)}%</span></td>
         <td>
@@ -379,7 +382,6 @@
   // 📄 GERAR PDF IDÊNTICO AO DO INSPETOR (MESMO ESQUEMA)
   // ============================================================
   
-  // ✅ ESSA É A FUNÇÃO QUE O INSPETOR USA (usa a tag img para contornar CORS)
   function loadImageAsDataURL(url) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -483,19 +485,23 @@
         const x = margin + col * (larguraFoto + gap);
         
         try {
-          // 👇 Usando a mesma função do inspetor que funciona perfeitamente
           const base64 = await loadImageAsDataURL(d.fotos[i]);
           doc.addImage(base64, 'JPEG', x, y, larguraFoto, alturaFoto);
           doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
         } catch (err) {
           console.error('Erro na foto:', err);
           doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
-          doc.setFontSize(6); doc.setTextColor(148, 163, 184); doc.text('Erro', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
+          doc.setFontSize(6); doc.setTextColor(148, 163, 184); doc.text('Falha', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
         }
         
         col++;
         if (col >= colunas) { col = 0; y += alturaFoto + 2; }
       }
+    } else {
+      // Se não houver fotos, adiciona um aviso no final do PDF
+      y += 8;
+      doc.setTextColor(148, 163, 184); doc.setFontSize(8); doc.setFont('helvetica', 'italic');
+      doc.text('* Nenhuma foto foi anexada a esta inspecao.', margin, y);
     }
 
     doc.save(`inspecao-${d.veiculo_placa}-${Date.now()}.pdf`);
