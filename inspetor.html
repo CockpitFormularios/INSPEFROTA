@@ -5,31 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Área do Inspetor | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
+<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  /* Estilo específico para a caixa de texto e fotos */
+  .texto-livre textarea { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 11px; font-size: 13.5px; font-family: inherit; resize: vertical; min-height: 100px; outline: none; transition: all 0.2s; }
+  .texto-livre textarea:focus { border-color: var(--green-600); box-shadow: 0 0 0 4px rgba(46,139,87,0.1); }
+  .fotos-section { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 20px; }
+  .btn-add-foto { display: inline-flex; align-items: center; gap: 8px; padding: 11px 18px; background: #fff; border: 2px solid var(--green-600); border-radius: 11px; cursor: pointer; font-size: 13.5px; font-weight: 700; color: var(--green-700); transition: all 0.22s; }
+  .btn-add-foto:hover { background: var(--green-600); color: #fff; transform: translateY(-2px); }
+  .fotos-preview { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 14px; }
+  .foto-item { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; border: 2px solid var(--border); }
+  .foto-item img { width: 100%; height: 100%; object-fit: cover; }
+  .foto-remove { position: absolute; top: 5px; right: 5px; width: 26px; height: 26px; border-radius: 50%; background: var(--danger); color: #fff; border: 2px solid #fff; cursor: pointer; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .foto-uploading { position: absolute; inset: 0; background: rgba(0,0,0,0.6); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+</style>
 </head>
 <body style="display:block;">
 
 <div class="loading-overlay" id="loadingOverlay">
-  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:28px; font-weight:800; letter-spacing:-1px;\'>INSPEFROTA</div><p style=\'color:#fff; font-weight:600; font-size:14px; margin-top:10px;\'>Carregando inspeção...</p>';">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+  <div style="display:none; color:#ffc93c; font-size:28px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando inspeção...</p>
 </div>
 
 <header style="background: linear-gradient(135deg, var(--green-900), var(--green-700)); padding: 16px 24px; display:flex; justify-content: space-between; align-items:center; box-shadow: var(--shadow-md); position: sticky; top: 0; z-index: 50;">
-  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" style="height: 52px; object-fit: contain;" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:22px; font-weight:800; letter-spacing:-1px;\'>INSPEFROTA</div>';">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" style="height: 52px; object-fit: contain;" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:22px; font-weight:800; letter-spacing:-1px;\'>INSPEFROTA</div>';">
   <a href="index.html" style="color:#fff; text-decoration:none; font-size:13px; font-weight:700; background: rgba(255,255,255,0.12); padding: 10px 18px; border-radius: 11px;">← Voltar ao Login</a>
 </header>
 
 <div style="max-width: 800px; margin: 0 auto; padding: 24px 16px 80px;">
 
-  <div class="step-indicator" id="stepIndicator">
-    <div class="step-dot active" data-step="1"><span class="step-num">1</span> Veículo</div>
-    <div class="step-dot" data-step="2"><span class="step-num">2</span> Checklist</div>
-    <div class="step-dot" data-step="3"><span class="step-num">3</span> Inspeção</div>
-    <div class="step-dot" data-step="4"><span class="step-num">4</span> Envio</div>
-  </div>
-
+  <!-- ETAPA 1: VEÍCULO -->
   <div class="card" id="step1">
     <h2 style="text-align:center; font-size: 22px; font-weight:800; margin-bottom: 8px;">🚗 Selecione o Veículo</h2>
     <p style="text-align:center; font-size: 13px; color: var(--text-soft); margin-bottom: 22px;">Escolha a placa do veículo que vai inspecionar</p>
@@ -41,6 +49,7 @@
     </div>
   </div>
 
+  <!-- ETAPA 2: CHECKLIST -->
   <div class="card" id="step2" style="display:none;">
     <h2 style="text-align:center; font-size: 22px; font-weight:800; margin-bottom: 8px;">📋 Escolha o Checklist</h2>
     <p style="text-align:center; font-size: 13px; color: var(--text-soft); margin-bottom: 22px;">Selecione o modelo de inspeção</p>
@@ -53,6 +62,7 @@
     <button class="btn btn-secondary" style="margin-top: 16px; width:100%; justify-content: center;" onclick="voltarPasso1()">← Trocar Veículo</button>
   </div>
 
+  <!-- ETAPA 3: INSPEÇÃO -->
   <div id="step3" style="display:none;">
     <div class="gestao-card" style="padding: 20px;">
       <div class="gestao-card-info">
@@ -69,7 +79,6 @@
         <div class="form-group">
           <label>Seu Nome (opcional)</label>
           <input type="text" class="form-control" id="inspetorNome" placeholder="Deixe em branco se preferir">
-          <small style="font-size:11.5px; color: var(--text-soft); display:block; margin-top:6px;">Se deixar em branco, será salvo como <strong>"Inspetor Anônimo"</strong></small>
         </div>
         <div class="form-group">
           <label>Local da Inspeção</label>
@@ -90,12 +99,22 @@
 
     <div id="itensInspecao"></div>
 
+    <!-- SEÇÃO DE FOTOS -->
+    <div class="fotos-section">
+      <div style="font-size: 15px; font-weight: 800; margin-bottom: 6px;">📸 Fotos da Inspeção</div>
+      <p style="font-size: 12.5px; color: var(--text-soft); margin-bottom: 14px;">Anexe fotos do veículo, avarias ou evidências (até 5MB por foto).</p>
+      <button type="button" class="btn-add-foto" onclick="document.getElementById('fotoInput').click()">📷 Adicionar Foto</button>
+      <input type="file" id="fotoInput" accept="image/*" capture="environment" multiple hidden onchange="adicionarFotos(event)">
+      <div class="fotos-preview" id="fotosPreview"></div>
+    </div>
+
     <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top: 20px; padding: 16px;" onclick="enviarInspecao()" id="btnEnviar">✅ Finalizar e Enviar Inspeção</button>
     <button class="btn btn-secondary" style="width:100%; justify-content:center; margin-top: 10px;" onclick="voltarPasso2()">← Trocar Checklist</button>
   </div>
 
+  <!-- ETAPA 4: SUCESSO -->
   <div class="card" id="step4" style="display:none; text-align:center; padding: 50px 30px;">
-    <div style="width: 100px; height: 100px; margin: 0 auto 24px; background: linear-gradient(135deg, var(--success-soft), #a7f3d0); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 50px; animation: pulse-success 2s infinite;">✅</div>
+    <div style="width: 100px; height: 100px; margin: 0 auto 24px; background: linear-gradient(135deg, var(--success-soft), #a7f3d0); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 50px;">✅</div>
     <h2 style="font-size: 26px; font-weight:800; margin-bottom: 10px;">Inspeção Enviada!</h2>
     <p style="color: var(--text-soft); margin-bottom: 26px; font-size: 14.5px;">A inspeção foi registrada com sucesso e já está disponível para o gestor.</p>
     <div id="resumoFinal" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 26px;"></div>
@@ -118,6 +137,7 @@
   let veiculoSel = null;
   let checklistSel = null;
   let respostas = {};
+  let fotos = [];
   let ultimaInspecao = null;
 
   let toastTimer;
@@ -129,14 +149,14 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
   }
 
+  function esconderLoading() {
+    const o = document.getElementById('loadingOverlay');
+    if (o) o.classList.add('hidden');
+  }
+
   function irParaEtapa(n) {
     ['step1','step2','step3','step4'].forEach(id => document.getElementById(id).style.display = 'none');
     document.getElementById('step' + n).style.display = 'block';
-    document.querySelectorAll('.step-dot').forEach(d => {
-      const step = parseInt(d.dataset.step);
-      d.classList.toggle('active', step === n);
-      d.classList.toggle('done', step < n);
-    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -154,15 +174,13 @@
     vazio.style.display = 'none';
     lista.innerHTML = '';
     veiculos.forEach(v => {
-      const icone = v.tipo === 'Moto' ? '🏍️' : v.tipo === 'Caminhão' ? '🚚' : v.tipo === 'Van' ? '🚐' : v.tipo === 'Máquina' ? '🚜' : '🚗';
       const card = document.createElement('div');
       card.className = 'veiculo-card';
       card.onclick = () => selecionarVeiculo(v);
       card.innerHTML = `
-        <div class="veiculo-icon-wrap">${icone}</div>
+        <div class="veiculo-icon-wrap">🚗</div>
         <div class="veiculo-placa">${v.placa}</div>
-        <div class="veiculo-modelo">${v.marca} ${v.modelo}${v.ano ? ' (' + v.ano + ')' : ''}</div>
-        <span class="veiculo-badge">${v.tipo || 'Carro'} • ${v.setor || 'Geral'}</span>
+        <div class="veiculo-modelo">${v.setor ? 'Setor: ' + v.setor : 'Sem setor'}</div>
       `;
       lista.appendChild(card);
     });
@@ -185,11 +203,9 @@
       const itens = Array.isArray(c.itens) ? c.itens.length : 0;
       const btn = document.createElement('button');
       btn.style.cssText = 'background:#fff; border:2px solid var(--border); border-radius:14px; padding:18px; display:flex; align-items:center; gap:14px; cursor:pointer; text-align:left; font-family:inherit; transition:0.22s; width:100%;';
-      btn.onmouseover = () => { btn.style.borderColor = 'var(--green-600)'; btn.style.transform = 'translateY(-2px)'; btn.style.boxShadow = 'var(--shadow-md)'; };
-      btn.onmouseout = () => { btn.style.borderColor = 'var(--border)'; btn.style.transform = 'translateY(0)'; btn.style.boxShadow = 'none'; };
       btn.onclick = () => selecionarChecklist(c);
       btn.innerHTML = `
-        <div style="width:52px; height:52px; background: var(--green-100); border-radius: 14px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">${c.icone || '📋'}</div>
+        <div style="width:52px; height:52px; background: var(--green-100); border-radius: 14px; display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0;">📋</div>
         <div style="flex:1;">
           <h4 style="font-size:15px; font-weight:800; margin-bottom:4px;">${c.titulo}</h4>
           <p style="font-size:12.5px; color:var(--text-soft);">${c.descricao || 'Sem descrição'}</p>
@@ -208,22 +224,18 @@
   function selecionarChecklist(c) {
     checklistSel = c;
     respostas = {};
-    document.getElementById('veiculoSel').textContent = `${veiculoSel.placa} - ${veiculoSel.marca} ${veiculoSel.modelo}`;
+    fotos = [];
+    document.getElementById('fotosPreview').innerHTML = '';
+    document.getElementById('veiculoSel').textContent = veiculoSel.placa;
     document.getElementById('checklistSel').textContent = c.titulo;
     renderizarItens();
     irParaEtapa(3);
   }
 
-  function voltarPasso1() {
-    veiculoSel = null;
-    irParaEtapa(1);
-  }
-
+  function voltarPasso1() { irParaEtapa(1); }
   function voltarPasso2() {
     if (!confirm('Voltar e trocar o checklist? As respostas serão perdidas.')) return;
-    respostas = {};
-    checklistSel = null;
-    irParaEtapa(2);
+    respostas = {}; fotos = []; irParaEtapa(2);
   }
 
   function renderizarItens() {
@@ -233,15 +245,29 @@
       const block = document.createElement('div');
       block.className = 'item-block';
       block.id = 'item-' + item.id;
+      
+      let inputHtml = '';
+      if (item.tipo === 'texto') {
+        inputHtml = `
+          <div class="texto-livre">
+            <textarea placeholder="Digite sua resposta aqui..." oninput="responderTexto('${item.id}', this.value)"></textarea>
+          </div>
+        `;
+      } else {
+        inputHtml = `
+          <div class="resp-options">
+            <button class="resp-opt conforme" onclick="responder('${item.id}', 'conforme', this)">✅ Conforme</button>
+            <button class="resp-opt nao-conforme" onclick="responder('${item.id}', 'nao_conforme', this)">❌ Não Conforme</button>
+          </div>
+        `;
+      }
+
       block.innerHTML = `
         <div class="item-header">
           <div class="item-num">${idx + 1}</div>
           <div class="item-pergunta">${item.pergunta}</div>
         </div>
-        <div class="resp-options">
-          <button class="resp-opt conforme" onclick="responder('${item.id}', 'conforme', this)">✅ Conforme</button>
-          <button class="resp-opt nao-conforme" onclick="responder('${item.id}', 'nao_conforme', this)">❌ Não Conforme</button>
-        </div>
+        ${inputHtml}
       `;
       container.appendChild(block);
     });
@@ -258,32 +284,94 @@
     atualizarProgresso();
   }
 
+  function responderTexto(itemId, valor) {
+    respostas[itemId] = valor;
+    atualizarProgresso();
+  }
+
   function atualizarProgresso() {
     const total = checklistSel.itens.length;
-    const respondidos = Object.keys(respostas).length;
+    const respondidos = Object.keys(respostas).filter(k => respostas[k] !== '' && respostas[k] !== undefined).length;
     document.getElementById('progresso').textContent = `${respondidos} / ${total}`;
     document.getElementById('progressBar').style.width = ((respondidos / total) * 100) + '%';
     const btn = document.getElementById('btnEnviar');
     btn.disabled = respondidos < total;
-    btn.textContent = respondidos < total
-      ? `⏳ Faltam ${total - respondidos} itens`
-      : '✅ Finalizar e Enviar Inspeção';
+    btn.textContent = respondidos < total ? `⏳ Faltam ${total - respondidos} itens` : '✅ Finalizar e Enviar Inspeção';
   }
 
+  // ============================================================
+  // 📸 UPLOAD DE FOTOS
+  // ============================================================
+  async function uploadFoto(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    const nomeArquivo = `insp-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const { error } = await db.storage.from('cipa-inspecoes').upload(nomeArquivo, file, { upsert: false, contentType: file.type });
+    if (error) throw new Error('Erro no upload: ' + error.message);
+    const { data } = db.storage.from('cipa-inspecoes').getPublicUrl(nomeArquivo);
+    return data.publicUrl;
+  }
+
+  async function adicionarFotos(event) {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) {
+        mostrarToast(`⚠️ "${file.name}" é maior que 5MB`, true);
+        continue;
+      }
+
+      const preview = document.getElementById('fotosPreview');
+      const tempId = 'temp-' + Date.now() + '-' + Math.random();
+      const tempDiv = document.createElement('div');
+      tempDiv.className = 'foto-item';
+      tempDiv.id = tempId;
+
+      const reader = new FileReader();
+      reader.onload = e => {
+        tempDiv.innerHTML = `<img src="${e.target.result}"><div class="foto-uploading">⏳</div>`;
+      };
+      reader.readAsDataURL(file);
+      preview.appendChild(tempDiv);
+
+      try {
+        const url = await uploadFoto(file);
+        fotos.push(url);
+        tempDiv.innerHTML = `<img src="${url}"><button type="button" class="foto-remove" onclick="removerFoto('${url}', this)">✕</button>`;
+      } catch (err) {
+        console.error(err);
+        tempDiv.remove();
+        mostrarToast('❌ ' + err.message, true);
+      }
+    }
+    event.target.value = '';
+  }
+
+  function removerFoto(url, btn) {
+    fotos = fotos.filter(u => u !== url);
+    btn.closest('.foto-item').remove();
+  }
+
+  // ============================================================
+  // 🚀 ENVIAR INSPEÇÃO
+  // ============================================================
   async function enviarInspecao() {
     const nomeDigitado = document.getElementById('inspetorNome').value.trim();
     const nomeFinal = nomeDigitado || 'Inspetor Anônimo';
 
     const itens = checklistSel.itens;
-    let conforme = 0, naoConforme = 0;
+    let conforme = 0, naoConforme = 0, textos = 0;
     const respostasArr = itens.map(item => {
-      const r = respostas[item.id];
+      const r = respostas[item.id] || '';
       if (r === 'conforme') conforme++;
       else if (r === 'nao_conforme') naoConforme++;
-      return { item_id: item.id, pergunta: item.pergunta, resposta: r };
+      else if (item.tipo === 'texto') textos++;
+      return { item_id: item.id, pergunta: item.pergunta, tipo: item.tipo || 'conforme', resposta: r };
     });
 
-    const percentual = ((conforme / itens.length) * 100).toFixed(2);
+    // O percentual considera apenas itens que não são de texto
+    const itensAvaliaveis = itens.length - textos;
+    const percentual = itensAvaliaveis > 0 ? ((conforme / itensAvaliaveis) * 100).toFixed(2) : 100;
 
     const btn = document.getElementById('btnEnviar');
     btn.disabled = true;
@@ -296,9 +384,10 @@
         checklist_categoria: checklistSel.categoria,
         inspetor_nome: nomeFinal,
         veiculo_placa: veiculoSel.placa,
-        veiculo_modelo: `${veiculoSel.marca} ${veiculoSel.modelo}`,
+        veiculo_modelo: 'N/A', // Mantido para compatibilidade com o banco
         local_inspecionado: document.getElementById('localInsp').value.trim(),
         respostas: respostasArr,
+        fotos: fotos, // 👈 Salvando as fotos no banco
         total_itens: itens.length,
         total_conformes: conforme,
         total_nao_conformes: naoConforme,
@@ -308,44 +397,64 @@
       if (error) throw error;
 
       ultimaInspecao = {
-        veiculo: `${veiculoSel.placa} - ${veiculoSel.marca} ${veiculoSel.modelo}`,
+        veiculo: veiculoSel.placa,
         checklist: checklistSel.titulo,
         inspetor: nomeFinal,
         local: document.getElementById('localInsp').value.trim(),
         data: new Date().toLocaleString('pt-BR'),
-        itens: itens, respostas: respostasArr, conforme, naoConforme, percentual
+        itens: itens, respostas: respostasArr, fotos: fotos, conforme, naoConforme, percentual
       };
 
       document.getElementById('resumoFinal').innerHTML = `
-        <div style="background: var(--success-soft); padding:16px; border-radius:12px; border:1.5px solid var(--success);">
-          <div style="font-size:26px; font-weight:800; color:#047857;">${conforme}</div>
-          <div style="font-size:11px; font-weight:700; color:var(--text-soft);">CONFORMES</div>
-        </div>
-        <div style="background: var(--danger-soft); padding:16px; border-radius:12px; border:1.5px solid var(--danger);">
-          <div style="font-size:26px; font-weight:800; color:#991b1b;">${naoConforme}</div>
-          <div style="font-size:11px; font-weight:700; color:var(--text-soft);">NÃO CONF.</div>
-        </div>
-        <div style="background: var(--bg); padding:16px; border-radius:12px; border:1.5px solid var(--border);">
-          <div style="font-size:26px; font-weight:800;">${percentual}%</div>
-          <div style="font-size:11px; font-weight:700; color:var(--text-soft);">CONFORMIDADE</div>
-        </div>
+        <div style="background: var(--success-soft); padding:16px; border-radius:12px; border:1.5px solid var(--success);"><div style="font-size:26px; font-weight:800; color:#047857;">${conforme}</div><div style="font-size:11px; font-weight:700; color:var(--text-soft);">CONFORMES</div></div>
+        <div style="background: var(--danger-soft); padding:16px; border-radius:12px; border:1.5px solid var(--danger);"><div style="font-size:26px; font-weight:800; color:#991b1b;">${naoConforme}</div><div style="font-size:11px; font-weight:700; color:var(--text-soft);">NÃO CONF.</div></div>
+        <div style="background: var(--bg); padding:16px; border-radius:12px; border:1.5px solid var(--border);"><div style="font-size:26px; font-weight:800;">${percentual}%</div><div style="font-size:11px; font-weight:700; color:var(--text-soft);">CONFORMIDADE</div></div>
       `;
 
       irParaEtapa(4);
       mostrarToast('✅ Inspeção enviada com sucesso!');
     } catch (err) {
+      console.error(err);
       mostrarToast('❌ ' + err.message, true);
       btn.disabled = false;
       btn.textContent = '✅ Finalizar e Enviar Inspeção';
     }
   }
 
-  function baixarPDF() {
+  // ============================================================
+  // 📄 GERAR PDF COM FOTOS E TEXTOS
+  // ============================================================
+  async function loadImageAsDataURL(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const maxW = 800;
+          const scale = img.naturalWidth > maxW ? maxW / img.naturalWidth : 1;
+          canvas.width = img.naturalWidth * scale;
+          canvas.height = img.naturalHeight * scale;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.75));
+        } catch (e) { reject(e); }
+      };
+      img.onerror = () => reject(new Error('Falha ao carregar imagem'));
+      img.src = url;
+    });
+  }
+
+  async function baixarPDF() {
     if (!ultimaInspecao) return;
+    mostrarToast('⏳ Gerando PDF...');
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const d = ultimaInspecao;
+    let y = 0;
 
+    // Cabeçalho
     doc.setFillColor(10, 31, 19);
     doc.rect(0, 0, 210, 25, 'F');
     doc.setTextColor(255, 255, 255);
@@ -353,7 +462,7 @@
     doc.setFont('helvetica', 'bold');
     doc.text('RELATORIO DE INSPECAO VEICULAR - INSPEFROTA', 105, 15, { align: 'center' });
 
-    let y = 35;
+    y = 35;
     doc.setTextColor(11, 18, 32);
     doc.setFontSize(10);
     doc.text(`Veiculo: ${d.veiculo}`, 15, y); y += 6;
@@ -368,30 +477,92 @@
     doc.text(`Conformidade: ${d.percentual}% | ${d.conforme} conformes | ${d.naoConforme} nao conformes`, 15, y + 2);
     y += 14;
 
+    // Itens (Conforme/Não Conforme e Texto)
     d.itens.forEach((item, idx) => {
-      if (y > 270) { doc.addPage(); y = 20; }
       const r = d.respostas.find(x => x.item_id === item.id);
+      const isTexto = item.tipo === 'texto';
       const ok = r?.resposta === 'conforme';
-      doc.setFillColor(ok ? 209 : 254, ok ? 250 : 226, ok ? 229 : 226);
-      doc.rect(15, y - 4, 180, 8, 'F');
-      doc.setTextColor(11, 18, 32);
-      doc.setFontSize(9);
-      doc.text(`${idx + 1}. ${item.pergunta}`, 17, y + 1);
-      doc.setTextColor(ok ? 4 : 153, ok ? 120 : 27, ok ? 87 : 27);
-      doc.setFont('helvetica', 'bold');
-      doc.text(ok ? 'OK' : 'NC', 190, y + 1, { align: 'right' });
-      doc.setFont('helvetica', 'normal');
-      y += 10;
+
+      if (isTexto) {
+        const textoLimpo = (r?.resposta || '').replace(/[\u{1F300}-\u{1FAFF}]/gu, '').trim();
+        const linhas = doc.splitTextToSize(textoLimpo || 'Sem resposta', 165);
+        const altura = Math.max(12, linhas.length * 4.5 + 10);
+
+        if (y + altura > 275) { doc.addPage(); y = 20; }
+
+        doc.setFillColor(239, 246, 255);
+        doc.rect(15, y - 4, 180, altura, 'F');
+        doc.setFillColor(59, 130, 246);
+        doc.rect(15, y - 4, 1.5, altura, 'F');
+
+        doc.setTextColor(11, 18, 32);
+        doc.setFontSize(9);
+        doc.text(`${idx + 1}. ${item.pergunta}`, 17, y + 1);
+        doc.setTextColor(20, 40, 80);
+        doc.setFontSize(8.5);
+        doc.text(linhas, 19, y + 6);
+        y += altura + 2;
+      } else {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.setFillColor(ok ? 209 : 254, ok ? 250 : 226, ok ? 229 : 226);
+        doc.rect(15, y - 4, 180, 8, 'F');
+        doc.setTextColor(11, 18, 32);
+        doc.setFontSize(9);
+        doc.text(`${idx + 1}. ${item.pergunta}`, 17, y + 1);
+        doc.setTextColor(ok ? 4 : 153, ok ? 120 : 27, ok ? 87 : 27);
+        doc.setFont('helvetica', 'bold');
+        doc.text(ok ? 'OK' : 'NC', 190, y + 1, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        y += 10;
+      }
     });
 
-    doc.save(`inspecao-${d.veiculo.split(' ')[0]}-${Date.now()}.pdf`);
-    mostrarToast('📄 PDF gerado!');
+    // Fotos anexadas
+    if (d.fotos && d.fotos.length > 0) {
+      if (y + 30 > 275) { doc.addPage(); y = 20; }
+      y += 8;
+      doc.setTextColor(11, 18, 32);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text('FOTOS DA INSPECAO', 15, y);
+      y += 6;
+
+      const colunas = 3;
+      const gap = 3;
+      const larguraFoto = (180 - gap * (colunas - 1)) / colunas;
+      const alturaFoto = larguraFoto * 0.75;
+      let col = 0;
+
+      for (let i = 0; i < d.fotos.length; i++) {
+        if (y + alturaFoto + 5 > 275) { doc.addPage(); y = 20; col = 0; }
+        const x = 15 + col * (larguraFoto + gap);
+        
+        try {
+          const base64 = await loadImageAsDataURL(d.fotos[i]);
+          doc.addImage(base64, 'JPEG', x, y, larguraFoto, alturaFoto);
+          doc.setDrawColor(229, 234, 240);
+          doc.rect(x, y, larguraFoto, alturaFoto);
+        } catch (e) {
+          doc.setDrawColor(229, 234, 240);
+          doc.rect(x, y, larguraFoto, alturaFoto);
+          doc.setFontSize(7);
+          doc.setTextColor(148, 163, 184);
+          doc.text('Erro na foto', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
+        }
+
+        col++;
+        if (col >= colunas) { col = 0; y += alturaFoto + 4; }
+      }
+    }
+
+    doc.save(`inspecao-${d.veiculo}-${Date.now()}.pdf`);
+    mostrarToast('📄 PDF gerado com fotos!');
   }
 
   (async () => {
     await carregarVeiculos();
     await carregarChecklists();
-    setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 400);
+    esconderLoading();
   })();
 </script>
 </body>
