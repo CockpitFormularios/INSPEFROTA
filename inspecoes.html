@@ -11,14 +11,12 @@
 </head>
 <body>
 
-<!-- LOADING -->
 <div class="loading-overlay" id="loadingOverlay">
   <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
   <div style="display:none; color:#ffc93c; font-size:32px; font-weight:800; letter-spacing:-1px;">INSPEFROTA</div>
   <p style="font-weight:600; font-size:14px;">Carregando inspeções...</p>
 </div>
 
-<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -44,7 +42,6 @@
   </div>
 </aside>
 
-<!-- MAIN -->
 <main class="main">
   <div class="topbar">
     <h2>Histórico de Inspeções
@@ -57,7 +54,6 @@
     </div>
   </div>
 
-  <!-- FILTROS -->
   <div class="card" style="padding: 18px 22px; margin-bottom: 20px;">
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
       <input type="text" class="form-control" id="busca" placeholder="🔍 Buscar por placa, inspetor ou checklist..." style="flex: 1; min-width: 240px;" oninput="renderizar()">
@@ -70,7 +66,6 @@
     </div>
   </div>
 
-  <!-- TABELA -->
   <div class="table-wrap">
     <table>
       <thead>
@@ -88,7 +83,6 @@
   </div>
 </main>
 
-<!-- MODAL DETALHES -->
 <div class="modal-overlay" id="modalDetalhes">
   <div class="modal" style="max-width: 720px;">
     <div class="modal-header">
@@ -103,7 +97,6 @@
   </div>
 </div>
 
-<!-- MODAL EXCLUIR -->
 <div class="modal-overlay" id="modalExcluir">
   <div class="modal" style="max-width: 480px;">
     <div class="modal-header" style="background: linear-gradient(135deg, #fef2f2, #fff);">
@@ -114,8 +107,7 @@
       <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #fee2e2, #fecaca); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">🗑️</div>
       <h4 style="font-size: 18px; font-weight: 800; margin-bottom: 10px;">Excluir esta inspeção?</h4>
       <p style="font-size: 13.5px; color: var(--text-soft); line-height: 1.6; margin-bottom: 20px;">
-        A inspeção do veículo <strong id="excluirPlaca">—</strong> será removida permanentemente.<br>
-        As fotos anexadas também serão apagadas.
+        A inspeção do veículo <strong id="excluirPlaca">—</strong> será removida permanentemente.
       </p>
       <p style="font-size: 12.5px; font-weight: 700; margin-bottom: 10px;">Digite <strong style="color: var(--danger);">EXCLUIR</strong> para confirmar:</p>
       <input type="text" class="form-control" id="inputExcluir" placeholder="EXCLUIR" style="text-align: center; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;" oninput="verificarExcluir()">
@@ -277,7 +269,16 @@
       fotosHtml = `
         <h4 style="margin-top:24px; margin-bottom:12px; font-size:15px; font-weight:800;">📸 Fotos da Inspeção (${i.fotos.length})</h4>
         <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:10px;">
-          ${i.fotos.map(url => `<a href="${url}" target="_blank"><img src="${url}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:10px; border:1.5px solid var(--border);" onerror="this.style.border='2px solid red'; this.alt='Erro';"></a>`).join('')}
+          ${i.fotos.map(url => `
+            <div style="position:relative; width:100%; aspect-ratio:1;">
+              <a href="${url}" target="_blank" style="display:block; width:100%; height:100%;">
+                <img src="${url}" style="width:100%; height:100%; object-fit:cover; border-radius:10px; border:1.5px solid var(--border);" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+              </a>
+              <div style="display:none; position:absolute; inset:0; background:#fee2e2; border:2px solid red; border-radius:10px; flex-direction:column; align-items:center; justify-content:center; color:#b91c1c; font-size:11px; font-weight:700; text-align:center; padding:5px;">
+                ⚠️ FALHA<br>NA FOTO
+              </div>
+            </div>
+          `).join('')}
         </div>
       `;
     }
@@ -385,27 +386,49 @@
   }
 
   // ============================================================
-  // 📄 GERAR PDF IDÊNTICO AO DO INSPETOR
+  // 📄 GERAR PDF (MÉTODO À PROVA DE FALHAS)
   // ============================================================
   
-  function loadImageAsDataURL(url) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          const maxW = 600;
-          const scale = img.naturalWidth > maxW ? maxW / img.naturalWidth : 1;
-          canvas.width = img.naturalWidth * scale;
-          canvas.height = img.naturalHeight * scale;
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/jpeg', 0.6));
-        } catch (e) { reject(e); }
-      };
-      img.onerror = () => reject(new Error('Falha ao carregar imagem'));
-      img.src = url;
-    });
+  async function obterBase64Imagem(url) {
+    // Estratégia 1: Tentar via fetch nativo
+    try {
+      const response = await fetch(url, { mode: 'cors' });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      const blob = await response.blob();
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (e1) {
+      console.warn('Tentativa 1 (fetch) falhou. Tentando via Image...', e1);
+      
+      // Estratégia 2: Tentar via tag <img> e canvas
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            const maxW = 600;
+            const scale = img.naturalWidth > maxW ? maxW / img.naturalWidth : 1;
+            canvas.width = img.naturalWidth * scale;
+            canvas.height = img.naturalHeight * scale;
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve(canvas.toDataURL('image/jpeg', 0.6));
+          } catch (e2) {
+            console.error('Erro fatal no canvas (CORS bloqueou):', e2);
+            reject(e2);
+          }
+        };
+        img.onerror = () => {
+          console.error('Erro na tag Image (Link quebrado ou CORS):', url);
+          reject(new Error('Falha ao carregar imagem'));
+        };
+        img.src = url;
+      });
+    }
   }
 
   async function exportarPDFIndividual() {
@@ -491,18 +514,24 @@
         const x = margin + col * (larguraFoto + gap);
         
         try {
-          const base64 = await loadImageAsDataURL(d.fotos[i]);
+          const base64 = await obterBase64Imagem(d.fotos[i]);
           doc.addImage(base64, 'JPEG', x, y, larguraFoto, alturaFoto);
           doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
         } catch (err) {
-          console.error('Erro na foto:', err);
-          doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
-          doc.setFontSize(6); doc.setTextColor(148, 163, 184); doc.text('Falha', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
+          // Se der erro, desenha o quadrado vermelho de aviso no PDF
+          doc.setFillColor(254, 226, 226); doc.rect(x, y, larguraFoto, alturaFoto, 'F');
+          doc.setDrawColor(225, 29, 72); doc.setLineWidth(0.5); doc.rect(x, y, larguraFoto, alturaFoto);
+          doc.setFontSize(7); doc.setTextColor(185, 28, 28); doc.setFont('helvetica', 'bold');
+          doc.text('FALHA NA FOTO', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
         }
         
         col++;
         if (col >= colunas) { col = 0; y += alturaFoto + 2; }
       }
+    } else {
+      y += 8;
+      doc.setTextColor(148, 163, 184); doc.setFontSize(8); doc.setFont('helvetica', 'italic');
+      doc.text('* Nenhuma foto foi anexada a esta inspecao.', margin, y);
     }
 
     doc.save(`inspecao-${d.veiculo_placa}-${Date.now()}.pdf`);
