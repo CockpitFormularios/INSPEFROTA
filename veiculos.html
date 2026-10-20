@@ -76,21 +76,9 @@
         <label>Placa <span>*</span></label>
         <input type="text" class="form-control" id="placa" placeholder="ABC-1234" maxlength="8" style="text-transform: uppercase; font-weight: 700; letter-spacing: 1px; font-size: 16px;">
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Setor</label>
-          <input type="text" class="form-control" id="setor" placeholder="Ex: Manutenção">
-        </div>
-        <div class="form-group">
-          <label>Tipo (opcional)</label>
-          <select class="form-control" id="tipo">
-            <option value="Carro">🚗 Carro</option>
-            <option value="Caminhão">🚚 Caminhão</option>
-            <option value="Moto">🏍️ Moto</option>
-            <option value="Van">🚐 Van</option>
-            <option value="Máquina">🚜 Máquina</option>
-          </select>
-        </div>
+      <div class="form-group">
+        <label>Setor (opcional)</label>
+        <input type="text" class="form-control" id="setor" placeholder="Ex: Manutenção, Produção...">
       </div>
     </div>
     <div class="modal-footer">
@@ -169,11 +157,6 @@
     window.location.href = 'index.html';
   }
 
-  function iconeTipo(tipo) {
-    const mapa = { 'Moto': '🏍️', 'Caminhão': '🚚', 'Van': '🚐', 'Máquina': '🚜' };
-    return mapa[tipo] || '🚗';
-  }
-
   async function carregarVeiculos() {
     try {
       const { data, error } = await db.from('veiculos').select('*').eq('ativo', true).order('placa');
@@ -202,10 +185,10 @@
       veiculos.forEach(v => {
         const card = document.createElement('div');
         card.className = 'veiculo-card';
-        // O clique no card abre a edição, mas os botões têm stopPropagation
         card.onclick = () => editarVeiculo(v.id);
+        // Ícone fixo 🚗 já que não tem mais o tipo
         card.innerHTML = `
-          <div class="veiculo-icon-wrap">${iconeTipo(v.tipo)}</div>
+          <div class="veiculo-icon-wrap">🚗</div>
           <div class="veiculo-placa">${v.placa}</div>
           <div class="veiculo-modelo">${v.setor ? 'Setor: ' + v.setor : 'Sem setor definido'}</div>
           <div style="display:flex; gap:8px; margin-top:12px;">
@@ -229,7 +212,6 @@
     document.getElementById('modalTitle').textContent = v ? 'Editar Veículo' : 'Cadastrar Veículo';
     document.getElementById('placa').value = v?.placa || '';
     document.getElementById('setor').value = v?.setor || '';
-    document.getElementById('tipo').value = v?.tipo || 'Carro';
     document.getElementById('modalVeiculo').classList.add('open');
   }
 
@@ -246,8 +228,8 @@
     const dados = {
       placa: document.getElementById('placa').value.trim().toUpperCase(),
       setor: document.getElementById('setor').value.trim(),
-      tipo: document.getElementById('tipo').value,
-      // Como não tem marca/modelo no form, salvamos um valor padrão para não quebrar o banco
+      // Mantemos valores padrão para não quebrar o banco de dados antigo
+      tipo: 'Carro', 
       marca: 'N/A',
       modelo: 'N/A',
       ativo: true
@@ -307,7 +289,7 @@
     btn.textContent = '⏳ Excluindo...';
 
     try {
-      // Soft delete: apenas marca como inativo para preservar o histórico
+      // Soft delete: apenas marca como inativo para preservar o histórico de inspeções
       const { error } = await db.from('veiculos').update({ ativo: false }).eq('id', veiculoParaExcluir.id);
       if (error) throw error;
 
