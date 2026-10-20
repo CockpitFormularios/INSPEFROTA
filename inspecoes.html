@@ -107,7 +107,8 @@
       <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #fee2e2, #fecaca); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">🗑️</div>
       <h4 style="font-size: 18px; font-weight: 800; margin-bottom: 10px;">Excluir esta inspeção?</h4>
       <p style="font-size: 13.5px; color: var(--text-soft); line-height: 1.6; margin-bottom: 20px;">
-        A inspeção do veículo <strong id="excluirPlaca">—</strong> será removida permanentemente.
+        A inspeção do veículo <strong id="excluirPlaca">—</strong> será removida permanentemente.<br>
+        As fotos anexadas também serão apagadas.
       </p>
       <p style="font-size: 12.5px; font-weight: 700; margin-bottom: 10px;">Digite <strong style="color: var(--danger);">EXCLUIR</strong> para confirmar:</p>
       <input type="text" class="form-control" id="inputExcluir" placeholder="EXCLUIR" style="text-align: center; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;" oninput="verificarExcluir()">
@@ -386,49 +387,26 @@
   }
 
   // ============================================================
-  // 📄 GERAR PDF (MÉTODO À PROVA DE FALHAS)
+  // 📄 GERAR PDF (MESMA FUNÇÃO DO INSPETOR)
   // ============================================================
-  
-  async function obterBase64Imagem(url) {
-    // Estratégia 1: Tentar via fetch nativo
-    try {
-      const response = await fetch(url, { mode: 'cors' });
-      if (!response.ok) throw new Error('HTTP ' + response.status);
-      const blob = await response.blob();
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-    } catch (e1) {
-      console.warn('Tentativa 1 (fetch) falhou. Tentando via Image...', e1);
-      
-      // Estratégia 2: Tentar via tag <img> e canvas
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          try {
-            const canvas = document.createElement('canvas');
-            const maxW = 600;
-            const scale = img.naturalWidth > maxW ? maxW / img.naturalWidth : 1;
-            canvas.width = img.naturalWidth * scale;
-            canvas.height = img.naturalHeight * scale;
-            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-            resolve(canvas.toDataURL('image/jpeg', 0.6));
-          } catch (e2) {
-            console.error('Erro fatal no canvas (CORS bloqueou):', e2);
-            reject(e2);
-          }
-        };
-        img.onerror = () => {
-          console.error('Erro na tag Image (Link quebrado ou CORS):', url);
-          reject(new Error('Falha ao carregar imagem'));
-        };
-        img.src = url;
-      });
-    }
+  async function loadImageAsDataURL(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const maxW = 600;
+          const scale = img.naturalWidth > maxW ? maxW / img.naturalWidth : 1;
+          canvas.width = img.naturalWidth * scale;
+          canvas.height = img.naturalHeight * scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        } catch (e) { reject(e); }
+      };
+      img.onerror = () => reject(new Error('Falha'));
+      img.src = url;
+    });
   }
 
   async function exportarPDFIndividual() {
@@ -441,6 +419,7 @@
     const margin = 10;
     let y = 0;
 
+    // === CABEÇALHO ===
     doc.setFillColor(10, 31, 19);
     doc.rect(0, 0, 210, 18, 'F');
     doc.setTextColor(255, 255, 255);
@@ -467,6 +446,7 @@
     doc.text(`Conformidade: ${pct.toFixed(1)}% | ${d.total_conformes} OK | ${d.total_nao_conformes} NC`, 160, y + 0.5, { align: 'center' });
     y += 10;
 
+    // === ITENS ===
     const respostas = d.respostas || [];
     respostas.forEach((r, idx) => {
       const v = r.resposta;
@@ -496,6 +476,7 @@
       }
     });
 
+    // === FOTOS ===
     if (d.fotos && d.fotos.length > 0) {
       if (y + 30 > 280) { doc.addPage(); y = 15; } 
       else { y += 4; }
@@ -512,26 +493,17 @@
       for (let i = 0; i < d.fotos.length; i++) {
         if (y + alturaFoto + 4 > 285) { doc.addPage(); y = 15; col = 0; }
         const x = margin + col * (larguraFoto + gap);
-        
         try {
-          const base64 = await obterBase64Imagem(d.fotos[i]);
+          const base64 = await loadImageAsDataURL(d.fotos[i]);
           doc.addImage(base64, 'JPEG', x, y, larguraFoto, alturaFoto);
           doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
-        } catch (err) {
-          // Se der erro, desenha o quadrado vermelho de aviso no PDF
-          doc.setFillColor(254, 226, 226); doc.rect(x, y, larguraFoto, alturaFoto, 'F');
-          doc.setDrawColor(225, 29, 72); doc.setLineWidth(0.5); doc.rect(x, y, larguraFoto, alturaFoto);
-          doc.setFontSize(7); doc.setTextColor(185, 28, 28); doc.setFont('helvetica', 'bold');
-          doc.text('FALHA NA FOTO', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
+        } catch (e) {
+          doc.setDrawColor(229, 234, 240); doc.rect(x, y, larguraFoto, alturaFoto);
+          doc.setFontSize(6); doc.setTextColor(148, 163, 184); doc.text('Erro', x + larguraFoto/2, y + alturaFoto/2, { align: 'center' });
         }
-        
         col++;
         if (col >= colunas) { col = 0; y += alturaFoto + 2; }
       }
-    } else {
-      y += 8;
-      doc.setTextColor(148, 163, 184); doc.setFontSize(8); doc.setFont('helvetica', 'italic');
-      doc.text('* Nenhuma foto foi anexada a esta inspecao.', margin, y);
     }
 
     doc.save(`inspecao-${d.veiculo_placa}-${Date.now()}.pdf`);
