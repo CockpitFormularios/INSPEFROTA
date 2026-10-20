@@ -3,23 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard | Inspeção Veicular</title>
+<title>Dashboard | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- ============ LOADING ============ -->
 <div class="loading-overlay" id="loadingOverlay">
-  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" alt="Logo" class="loading-logo">
+  <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="loading-logo" onerror="this.style.display='none';">
   <p style="font-weight:600; font-size:14px;">Carregando painel...</p>
 </div>
 
-<!-- ============ SIDEBAR ============ -->
 <aside class="sidebar" id="sidebar">
   <div class="brand">
-    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-cipa-ativa.png" alt="Logo" class="brand-logo">
+    <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrota.png" alt="INSPEFROTA" class="brand-logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'color:#ffc93c; font-size:24px; font-weight:800; letter-spacing:-1px; text-align:center;\'>INSPEFROTA</div>';">
   </div>
   <div class="nav-label">Painel</div>
   <nav>
@@ -41,7 +39,6 @@
   </div>
 </aside>
 
-<!-- ============ MAIN ============ -->
 <main class="main">
   <div class="topbar">
     <h2>Painel de Inspeção Veicular
@@ -54,7 +51,6 @@
     </div>
   </div>
 
-  <!-- CARD GESTÃO -->
   <div class="gestao-card">
     <div class="gestao-card-info">
       <div class="gestao-card-icon">🚗</div>
@@ -71,7 +67,6 @@
     </div>
   </div>
 
-  <!-- KPIs -->
   <section class="kpis">
     <div class="kpi" onclick="window.location.href='veiculos.html'">
       <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icone-app.png" class="kpi-bg-icon" alt="">
@@ -106,7 +101,6 @@
     </div>
   </section>
 
-  <!-- ATALHOS -->
   <div class="grid-3">
     <div class="atalho-card" onclick="window.location.href='veiculos.html'">
       <div class="atalho-icon veiculos">🚗</div>
@@ -131,7 +125,6 @@
     </div>
   </div>
 
-  <!-- ÚLTIMAS INSPEÇÕES -->
   <section id="secaoInspecoes" style="display:none;">
     <div class="card">
       <div class="card-header">
@@ -180,28 +173,23 @@
 
   async function carregarDados() {
     try {
-      // 1. Veículos
       const { count: cVeiculos } = await db.from('veiculos').select('*', { count: 'exact', head: true }).eq('ativo', true);
       document.getElementById('kpiVeiculos').textContent = cVeiculos || 0;
       document.getElementById('kpiVeiculosTrend').textContent = cVeiculos > 0 ? `✅ ${cVeiculos} ativos` : '⚠️ Nenhum cadastrado';
 
-      // 2. Checklists
       const { count: cChecklists } = await db.from('veiculos_checklists').select('*', { count: 'exact', head: true }).eq('ativo', true);
       document.getElementById('kpiChecklists').textContent = cChecklists || 0;
       document.getElementById('kpiChecklistsTrend').textContent = cChecklists > 0 ? `📋 ${cChecklists} modelo${cChecklists > 1 ? 's' : ''}` : '⚠️ Nenhum criado';
 
-      // 3. Inspeções
       const { count: cInspecoes } = await db.from('veiculos_inspecoes').select('*', { count: 'exact', head: true });
       document.getElementById('kpiInspecoes').textContent = cInspecoes || 0;
       document.getElementById('kpiInspecoesTrend').textContent = cInspecoes > 0 ? `✅ ${cInspecoes} realizadas` : '📭 Nenhuma ainda';
 
-      // 4. Não Conformidades (soma total)
       const { data: insp } = await db.from('veiculos_inspecoes').select('total_nao_conformes');
       const totalNC = (insp || []).reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
       document.getElementById('kpiNC').textContent = totalNC;
       document.getElementById('kpiNCTrend').textContent = totalNC > 0 ? '⚠️ Atenção necessária' : '✅ Tudo em ordem';
 
-      // Últimas 5 inspeções
       if (cInspecoes > 0) {
         const { data: ultimas } = await db.from('veiculos_inspecoes').select('*').order('created_at', { ascending: false }).limit(5);
         if (ultimas && ultimas.length > 0) {
