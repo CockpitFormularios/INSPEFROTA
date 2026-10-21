@@ -5,8 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icon-192.png">
+
+<!-- ✅ ÍCONES: .ico para PC, .png para Celular -->
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+<link rel="icon" type="image/png" sizes="192x192" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icon-192.png">
+<link rel="apple-touch-icon" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icon-192.png">
+
 <link rel="stylesheet" href="style.css">
+<!-- Biblioteca para gerar o QR Code -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <!-- Configurações do App (PWA) -->
@@ -15,7 +22,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="INSPEFROTA">
-<link rel="apple-touch-icon" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icon-192.png">
 </head>
 <body>
 
@@ -138,6 +144,7 @@
         Aponte a câmera do celular para o QR Code abaixo para abrir a tela de inspeção. <br><strong>Não é necessário fazer login.</strong>
       </p>
       
+      <!-- Container do QR Code -->
       <div id="qrcode" style="display: inline-block; padding: 16px; background: #fff; border-radius: 12px; border: 1.5px solid var(--border); box-shadow: var(--shadow-sm);"></div>
       
       <div style="margin-top: 24px; background: var(--bg); padding: 14px; border-radius: 10px; font-size: 12px; color: var(--text-soft); word-break: break-all;">
@@ -205,9 +212,11 @@
     const modal = document.getElementById('modalQRCode');
     modal.classList.add('open');
     
+    // Descobre a URL base do site dinamicamente
     const urlInspetor = window.location.origin + window.location.pathname.replace('dashboard.html', '') + 'inspetor.html';
     document.getElementById('linkInspetorTexto').textContent = urlInspetor;
 
+    // Limpa o container e gera um novo QR Code
     const container = document.getElementById('qrcode');
     container.innerHTML = '';
     
@@ -330,6 +339,7 @@
   })();
 </script>
 
+<!-- Script para registrar o Service Worker (PWA) -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
