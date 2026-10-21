@@ -9,7 +9,6 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<!-- Configurações do App no Celular (PWA) -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a1f13">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -47,8 +46,8 @@
 
   <!-- ETAPA 1: VEÍCULO -->
   <div class="card" id="step1">
-    <h2 style="text-align:center; font-size: 22px; font-weight:800; margin-bottom: 8px;">Selecione o Veículo</h2>
-    <p style="text-align:center; font-size: 13px; color: var(--text-soft); margin-bottom: 22px;">Escolha a TAG do veículo que vai inspecionar</p>
+    <h2 style="text-align:center; font-size: 22px; font-weight:800; margin-bottom: 8px;">Selecione a TAG do Veículo</h2>
+    <p style="text-align:center; font-size: 13px; color: var(--text-soft); margin-bottom: 22px;">Escolha a TAG / Placa do veículo que vai inspecionar</p>
     <div id="listaVeiculos" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px;"></div>
     <div id="vazioVeiculos" class="empty-state" style="display:none;">
       <div class="icon">🚗</div>
@@ -85,11 +84,11 @@
     <div class="card">
       <div class="form-row">
         <div class="form-group">
-          <label>Seu Nome (opcional)</label>
+          <label>Seu Nome</label>
           <input type="text" class="form-control" id="inspetorNome" placeholder="Deixe em branco se preferir">
         </div>
         <div class="form-group">
-          <label>Local da Inspeção (opcional)<</label>
+          <label>Local da Inspeção</label>
           <input type="text" class="form-control" id="localInsp" placeholder="Ex: Pátio, Garagem">
         </div>
       </div>
@@ -107,7 +106,7 @@
 
     <div id="itensInspecao"></div>
 
-    <!-- SEÇÃO DE FOTOS (OPCIONAL) -->
+    <!-- SEÇÃO DE FOTOS -->
     <div class="fotos-section">
       <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom: 6px;">
         <div style="font-size: 15px; font-weight: 800;">📸 Fotos da Inspeção</div>
@@ -130,7 +129,7 @@
     <div style="width: 100px; height: 100px; margin: 0 auto 24px; background: linear-gradient(135deg, var(--success-soft), #a7f3d0); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 50px;">✅</div>
     <h2 style="font-size: 26px; font-weight:800; margin-bottom: 10px;">Inspeção Enviada!</h2>
     <p style="color: var(--text-soft); margin-bottom: 26px; font-size: 14.5px;">A inspeção foi registrada com sucesso e já está disponível para o gestor.</p>
-    <div id="resumoFinal" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 26px;"></div>
+    <div id="resumoFinal" style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 26px;"></div>
     <button class="btn btn-primary" style="width:100%; justify-content:center; margin-bottom: 10px;" onclick="baixarPDF()">📄 Baixar PDF</button>
     <button class="btn btn-gold" style="width:100%; justify-content:center;" onclick="location.reload()">🔄 Nova Inspeção</button>
   </div>
@@ -270,7 +269,6 @@
     const respondidos = Object.keys(respostas).filter(k => respostas[k] !== '' && respostas[k] !== undefined).length;
     const btn = document.getElementById('btnEnviar');
     
-    // Botão só depende dos itens, fotos são opcionais
     if (respondidos >= total) {
       btn.disabled = false;
       btn.textContent = '✅ Finalizar e Enviar Inspeção';
@@ -281,7 +279,7 @@
   }
 
   // ============================================================
-  // 📸 UPLOAD DE FOTOS (Opcional)
+  // 📸 UPLOAD DE FOTOS
   // ============================================================
   async function uploadFoto(file) {
     const ext = file.name.split('.').pop().toLowerCase();
@@ -347,9 +345,6 @@
       return { item_id: item.id, pergunta: item.pergunta, tipo: item.tipo || 'conforme', resposta: r };
     });
 
-    const itensAvaliaveis = itens.length - textos;
-    const percentual = itensAvaliaveis > 0 ? ((conforme / itensAvaliaveis) * 100).toFixed(2) : 100;
-
     const btn = document.getElementById('btnEnviar');
     btn.disabled = true;
     btn.textContent = '⏳ Enviando...';
@@ -364,11 +359,11 @@
         veiculo_modelo: 'N/A',
         local_inspecionado: document.getElementById('localInsp').value.trim(),
         respostas: respostasArr,
-        fotos: fotos, // Salva o array de fotos (pode ser vazio)
+        fotos: fotos,
         total_itens: itens.length,
         total_conformes: conforme,
         total_nao_conformes: naoConforme,
-        percentual_conformidade: percentual,
+        percentual_conformidade: 0, // Mantido no banco para compatibilidade, mas não exibido
         status: 'concluida'
       }]);
       if (error) throw error;
@@ -376,13 +371,19 @@
       ultimaInspecao = {
         veiculo: veiculoSel.placa, checklist: checklistSel.titulo, inspetor: nomeFinal,
         local: document.getElementById('localInsp').value.trim(), data: new Date().toLocaleString('pt-BR'),
-        itens: itens, respostas: respostasArr, fotos: fotos, conforme, naoConforme, percentual
+        itens: itens, respostas: respostasArr, fotos: fotos, conforme, naoConforme
       };
 
+      // Resumo sem porcentagem
       document.getElementById('resumoFinal').innerHTML = `
-        <div style="background: var(--success-soft); padding:16px; border-radius:12px; border:1.5px solid var(--success);"><div style="font-size:26px; font-weight:800; color:#047857;">${conforme}</div><div style="font-size:11px; font-weight:700; color:var(--text-soft);">CONFORMES</div></div>
-        <div style="background: var(--danger-soft); padding:16px; border-radius:12px; border:1.5px solid var(--danger);"><div style="font-size:26px; font-weight:800; color:#991b1b;">${naoConforme}</div><div style="font-size:11px; font-weight:700; color:var(--text-soft);">NÃO CONF.</div></div>
-        <div style="background: var(--bg); padding:16px; border-radius:12px; border:1.5px solid var(--border);"><div style="font-size:26px; font-weight:800;">${percentual}%</div><div style="font-size:11px; font-weight:700; color:var(--text-soft);">CONFORMIDADE</div></div>
+        <div style="background: var(--success-soft); padding:16px; border-radius:12px; border:1.5px solid var(--success);">
+          <div style="font-size:26px; font-weight:800; color:#047857;">${conforme}</div>
+          <div style="font-size:11px; font-weight:700; color:var(--text-soft);">CONFORMES</div>
+        </div>
+        <div style="background: var(--danger-soft); padding:16px; border-radius:12px; border:1.5px solid var(--danger);">
+          <div style="font-size:26px; font-weight:800; color:#991b1b;">${naoConforme}</div>
+          <div style="font-size:11px; font-weight:700; color:var(--text-soft);">NÃO CONFORMES</div>
+        </div>
       `;
 
       irParaEtapa(4);
@@ -396,7 +397,7 @@
   }
 
   // ============================================================
-  // 📄 GERAR PDF COMPACTO (1 FOLHA SEMPRE QUE POSSÍVEL)
+  // 📄 GERAR PDF (SEM PORCENTAGEM)
   // ============================================================
   async function loadImageAsDataURL(url) {
     return new Promise((resolve, reject) => {
@@ -447,10 +448,11 @@
     y += 5;
     doc.text(`Local: ${d.local || '-'}`, margin, y); 
     
+    // Substituído a barra de porcentagem pela contagem direta
     doc.setFillColor(240, 244, 248);
     doc.rect(120, y - 4, 80, 6, 'F');
     doc.setFontSize(9);
-    doc.text(`Conformidade: ${d.percentual}% | ${d.conforme} OK | ${d.naoConforme} NC`, 160, y + 0.5, { align: 'center' });
+    doc.text(`Conformes: ${d.conforme} | Nao Conformes: ${d.naoConforme}`, 160, y + 0.5, { align: 'center' });
     y += 10;
 
     // === ITENS ===
@@ -482,7 +484,7 @@
       }
     });
 
-    // === FOTOS (Só gera a seção se houver fotos) ===
+    // === FOTOS ===
     if (d.fotos && d.fotos.length > 0) {
       if (y + 30 > 280) { doc.addPage(); y = 15; } 
       else { y += 4; }
@@ -519,7 +521,6 @@
   (async () => { await carregarVeiculos(); await carregarChecklists(); esconderLoading(); })();
 </script>
 
-<!-- Script para registrar o Service Worker (PWA) -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
