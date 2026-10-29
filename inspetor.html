@@ -112,10 +112,22 @@
         <div style="font-size: 15px; font-weight: 800;">📸 Fotos da Inspeção</div>
         <div style="font-size: 12px; font-weight: 700; color: var(--text-soft); background: var(--bg); padding: 4px 10px; border-radius: 20px;" id="contadorFotos">0 fotos anexadas</div>
       </div>
-      <p style="font-size: 12.5px; color: var(--text-soft); margin-bottom: 14px;">Anexe fotos do veículo (frente, lateral, traseira, avarias, etc.). Máx 5MB cada.</p>
+      <p style="font-size: 12.5px; color: var(--text-soft); margin-bottom: 14px;">Tire uma foto na hora ou escolha uma já tirada da galeria. Máx 5MB cada.</p>
       
-      <button type="button" class="btn-add-foto" onclick="document.getElementById('fotoInput').click()" id="btnAddFoto">📷 Adicionar Foto</button>
-      <input type="file" id="fotoInput" accept="image/*" capture="environment" multiple hidden onchange="adicionarFotos(event)">
+      <!-- DOIS BOTÕES: CÂMERA E GALERIA -->
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="button" class="btn-add-foto" onclick="document.getElementById('fotoCamera').click()">
+          📷 Tirar Foto
+        </button>
+        <button type="button" class="btn-add-foto" onclick="document.getElementById('fotoGaleria').click()">
+          🖼️ Escolher da Galeria
+        </button>
+      </div>
+
+      <!-- Câmera na hora -->
+      <input type="file" id="fotoCamera" accept="image/*" capture="environment" multiple hidden onchange="adicionarFotos(event)">
+      <!-- Galeria / arquivos já tirados -->
+      <input type="file" id="fotoGaleria" accept="image/*" multiple hidden onchange="adicionarFotos(event)">
       
       <div class="fotos-preview" id="fotosPreview"></div>
     </div>
@@ -210,6 +222,7 @@
     respostas = {};
     fotos = [];
     document.getElementById('fotosPreview').innerHTML = '';
+    document.getElementById('contadorFotos').textContent = '0 fotos anexadas';
     document.getElementById('veiculoSel').textContent = veiculoSel.placa;
     document.getElementById('checklistSel').textContent = c.titulo;
     renderizarItens();
@@ -363,7 +376,7 @@
         total_itens: itens.length,
         total_conformes: conforme,
         total_nao_conformes: naoConforme,
-        percentual_conformidade: 0, // Mantido no banco para compatibilidade, mas não exibido
+        percentual_conformidade: 0,
         status: 'concluida'
       }]);
       if (error) throw error;
@@ -374,7 +387,6 @@
         itens: itens, respostas: respostasArr, fotos: fotos, conforme, naoConforme
       };
 
-      // Resumo sem porcentagem
       document.getElementById('resumoFinal').innerHTML = `
         <div style="background: var(--success-soft); padding:16px; border-radius:12px; border:1.5px solid var(--success);">
           <div style="font-size:26px; font-weight:800; color:#047857;">${conforme}</div>
@@ -448,7 +460,6 @@
     y += 5;
     doc.text(`Local: ${d.local || '-'}`, margin, y); 
     
-    // Substituído a barra de porcentagem pela contagem direta
     doc.setFillColor(240, 244, 248);
     doc.rect(120, y - 4, 80, 6, 'F');
     doc.setFontSize(9);
