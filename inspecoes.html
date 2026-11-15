@@ -26,8 +26,8 @@
   .tab-btn.active .tab-badge { background: var(--green-100); color: var(--green-700); }
 
   /* BOTÃO REVERTER */
-  .btn-reverter { background: #fef3c7; color: #92400e; border: 1.5px solid #fcd34d; padding: 6px 12px; font-size: 12px; border-radius: 11px; cursor: pointer; font-weight: 600; transition: all 0.22s; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
-  .btn-reverter:hover { background: #f59e0b; color: #fff; border-color: #f59e0b; transform: translateY(-2px); }
+  .btn-reverter { background: #fff7ed; color: #c2410c; border: 1.5px solid #fdba74; padding: 6px 12px; font-size: 12px; border-radius: 11px; cursor: pointer; font-weight: 600; transition: all 0.22s; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; white-space: nowrap; }
+  .btn-reverter:hover { background: #f97316; color: #fff; border-color: #f97316; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(249, 115, 22, 0.3); }
 </style>
 </head>
 <body>
@@ -374,8 +374,8 @@
       const bst = badgeStatus(status);
       const podeBaixar = temNC && status !== 'resolvido' && status !== 'descartado';
       
-      // Regra para mostrar o botão de Reverter (só no histórico)
-      const podeReverter = (status === 'resolvido' || status === 'descartado') && temNC;
+      // ✅ AGORA O BOTÃO REVERTER APARECE EM TODAS AS QUE ESTÃO NO HISTÓRICO
+      const podeReverter = (status === 'resolvido' || status === 'descartado');
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -405,7 +405,7 @@
   }
 
   // ============================================================
-  // REVERTER BAIXA (NOVO)
+  // REVERTER BAIXA
   // ============================================================
   async function reverterBaixa(id) {
     if (!confirm('🔄 Deseja realmente reverter a baixa?\n\nEsta inspeção voltará para a aba de "Pendentes".')) return;
