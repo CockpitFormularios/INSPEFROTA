@@ -12,6 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a1f13">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="INSPEFROTA">
 <link rel="apple-touch-icon" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
@@ -177,6 +178,28 @@
   </div>
 </div>
 
+<!-- NOVO MODAL REVERTER BAIXA -->
+<div class="modal-overlay" id="modalReverter">
+  <div class="modal" style="max-width: 480px;">
+    <div class="modal-header" style="background: linear-gradient(135deg, #fff7ed, #fff);">
+      <h3 style="color: #c2410c; display:flex; align-items:center; gap:8px;">🔄 Reverter Baixa</h3>
+      <button class="close-btn" onclick="fecharModalReverter()">✕</button>
+    </div>
+    <div class="modal-body" style="text-align: center;">
+      <div style="width: 80px; height: 80px; margin: 0 auto 20px; background: linear-gradient(135deg, #ffedd5, #fed7aa); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px;">🔄</div>
+      <h4 style="font-size: 18px; font-weight: 800; margin-bottom: 10px;">Voltar para Pendente?</h4>
+      <p style="font-size: 13.5px; color: var(--text-soft); line-height: 1.6; margin-bottom: 20px;">
+        Você está desfazendo a baixa da inspeção do veículo <strong id="reverterPlaca">—</strong>.<br>
+        Ela voltará para a aba de <strong>Pendentes</strong> e os dados de resolução serão apagados.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModalReverter()">Cancelar</button>
+      <button class="btn btn-gold" id="btnConfirmarReverter" onclick="confirmarReverter()" style="background: linear-gradient(135deg, #f97316, #ea580c); color:#fff; border:none; box-shadow: 0 4px 14px rgba(249,115,22,0.4);">🔄 Sim, Reverter</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EXCLUIR -->
 <div class="modal-overlay" id="modalExcluir">
   <div class="modal" style="max-width: 480px;">
@@ -214,6 +237,7 @@
   let inspecaoSelecionada = null;
   let inspecaoParaExcluir = null;
   let inspecaoParaResolver = null;
+  let inspecaoParaReverter = null;
   
   let abaAtual = 'pendentes'; 
 
@@ -374,7 +398,6 @@
       const bst = badgeStatus(status);
       const podeBaixar = temNC && status !== 'resolvido' && status !== 'descartado';
       
-      // ✅ AGORA O BOTÃO REVERTER APARECE EM TODAS AS QUE ESTÃO NO HISTÓRICO
       const podeReverter = (status === 'resolvido' || status === 'descartado');
 
       const tr = document.createElement('tr');
@@ -394,7 +417,7 @@
             
             ${podeBaixar ? `<button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModalResolver('${i.id}')">✅ Dar Baixa</button>` : ''}
             
-            ${podeReverter ? `<button class="btn-reverter" onclick="reverterBaixa('${i.id}')" title="Desfazer Baixa (Voltar para Pendente)">🔄 Reverter</button>` : ''}
+            ${podeReverter ? `<button class="btn-reverter" onclick="abrirModalReverter('${i.id}')" title="Desfazer Baixa (Voltar para Pendente)">🔄 Reverter</button>` : ''}
             
             <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModalExcluir('${i.id}')">🗑️</button>
           </div>
@@ -405,10 +428,26 @@
   }
 
   // ============================================================
-  // REVERTER BAIXA
+  // REVERTER BAIXA (AGORA COM MODAL PRÓPRIO)
   // ============================================================
-  async function reverterBaixa(id) {
-    if (!confirm('🔄 Deseja realmente reverter a baixa?\n\nEsta inspeção voltará para a aba de "Pendentes".')) return;
+  function abrirModalReverter(id) {
+    const i = inspecoes.find(x => String(x.id) === String(id));
+    if (!i) return;
+    inspecaoParaReverter = i;
+    document.getElementById('reverterPlaca').textContent = i.veiculo_placa;
+    document.getElementById('modalReverter').classList.add('open');
+  }
+
+  function fecharModalReverter() {
+    document.getElementById('modalReverter').classList.remove('open');
+    inspecaoParaReverter = null;
+  }
+
+  async function confirmarReverter() {
+    if (!inspecaoParaReverter) return;
+    const btn = document.getElementById('btnConfirmarReverter');
+    btn.disabled = true;
+    btn.textContent = '⏳ Revertendo...';
 
     try {
       const { error } = await db.from('veiculos_inspecoes').update({
@@ -416,24 +455,28 @@
         resolvido_por: null,
         resolvido_em: null,
         observacao_resolucao: null
-      }).eq('id', id);
+      }).eq('id', inspecaoParaReverter.id);
       
       if (error) throw error;
 
       try {
         await db.from('veiculos_inspecoes_historico').insert([{
-          inspecao_id: Number(id),
+          inspecao_id: Number(inspecaoParaReverter.id),
           acao: 'reversao_baixa',
           detalhes: 'Baixa revertida pelo gestor. Inspeção voltou para pendente.',
           usuario: 'Gestor'
         }]);
       } catch (e) { console.warn('Histórico não registrado:', e); }
 
+      fecharModalReverter();
       mostrarToast('🔄 Baixa revertida! A inspeção está pendente novamente.');
       await carregarInspecoes();
     } catch (err) {
       console.error(err);
       mostrarToast('❌ ' + err.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔄 Sim, Reverter';
     }
   }
 
@@ -514,7 +557,7 @@
       
       const podeReverterModal = (status === 'resolvido' || status === 'descartado');
       const btnReverterModal = podeReverterModal 
-        ? `<button class="btn-reverter" style="margin-top:12px; width:100%; justify-content:center;" onclick="fecharModal(); reverterBaixa('${i.id}')">🔄 Reverter Baixa (Voltar p/ Pendente)</button>` 
+        ? `<button class="btn-reverter" style="margin-top:12px; width:100%; justify-content:center;" onclick="fecharModal(); abrirModalReverter('${i.id}')">🔄 Reverter Baixa (Voltar p/ Pendente)</button>` 
         : '';
 
       tratativaHtml = `
@@ -884,6 +927,7 @@
   // Fechar modais ao clicar fora
   document.getElementById('modalDetalhes').addEventListener('click', e => { if (e.target.id === 'modalDetalhes') fecharModal(); });
   document.getElementById('modalResolver').addEventListener('click', e => { if (e.target.id === 'modalResolver') fecharModalResolver(); });
+  document.getElementById('modalReverter').addEventListener('click', e => { if (e.target.id === 'modalReverter') fecharModalReverter(); });
   document.getElementById('modalExcluir').addEventListener('click', e => { if (e.target.id === 'modalExcluir') fecharModalExcluir(); });
 
   (async () => {
