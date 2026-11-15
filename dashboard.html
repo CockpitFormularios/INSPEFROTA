@@ -6,17 +6,14 @@
 <title>Dashboard | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<!-- ✅ ÍCONES: .ico para PC, .png para Celular -->
 <link rel="icon" href="favicon.ico" type="image/x-icon">
 <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 <link rel="icon" type="image/png" sizes="192x192" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icon-192.png">
 <link rel="apple-touch-icon" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icon-192.png">
 
 <link rel="stylesheet" href="style.css">
-<!-- Biblioteca para gerar o QR Code -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-<!-- Configurações do App (PWA) -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a1f13">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -95,11 +92,11 @@
       <div class="kpi-label">Inspeções Realizadas</div>
       <span class="kpi-trend" id="kpiInspecoesTrend">Carregando...</span>
     </div>
-    <div class="kpi danger" onclick="window.location.href='inspecoes.html'">
+    <div class="kpi danger" onclick="window.location.href='inspecoes.html?status=pendente'">
       <img src="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png" class="kpi-bg-icon" alt="">
       <div class="kpi-header"><div class="kpi-icon">⚠️</div></div>
       <div class="kpi-value" id="kpiNC"><span class="skeleton"></span></div>
-      <div class="kpi-label">Não Conformidades</div>
+      <div class="kpi-label">NCs Pendentes</div>
       <span class="kpi-trend" id="kpiNCTrend">Carregando...</span>
     </div>
   </section>
@@ -144,7 +141,6 @@
         Aponte a câmera do celular para o QR Code abaixo para abrir a tela de inspeção. <br><strong>Não é necessário fazer login.</strong>
       </p>
       
-      <!-- Container do QR Code -->
       <div id="qrcode" style="display: inline-block; padding: 16px; background: #fff; border-radius: 12px; border: 1.5px solid var(--border); box-shadow: var(--shadow-sm);"></div>
       
       <div style="margin-top: 24px; background: var(--bg); padding: 14px; border-radius: 10px; font-size: 12px; color: var(--text-soft); word-break: break-all;">
@@ -206,17 +202,15 @@
   }
 
   // ============================================================
-  // 📱 FUNÇÕES DO QR CODE
+  // QR CODE
   // ============================================================
   function abrirModalQRCode() {
     const modal = document.getElementById('modalQRCode');
     modal.classList.add('open');
     
-    // Descobre a URL base do site dinamicamente
     const urlInspetor = window.location.origin + window.location.pathname.replace('dashboard.html', '') + 'inspetor.html';
     document.getElementById('linkInspetorTexto').textContent = urlInspetor;
 
-    // Limpa o container e gera um novo QR Code
     const container = document.getElementById('qrcode');
     container.innerHTML = '';
     
@@ -241,11 +235,8 @@
     const img = document.querySelector('#qrcode img');
     
     let urlData = '';
-    if (canvas) {
-      urlData = canvas.toDataURL("image/png");
-    } else if (img) {
-      urlData = img.src;
-    }
+    if (canvas) urlData = canvas.toDataURL("image/png");
+    else if (img) urlData = img.src;
 
     if (!urlData) {
       mostrarToast('❌ Erro ao gerar imagem do QR Code.', 'error');
@@ -267,7 +258,20 @@
   });
 
   // ============================================================
-  // 📊 CARREGAMENTO DE DADOS DO DASHBOARD
+  // BADGE DE STATUS
+  // ============================================================
+  function badgeStatus(status) {
+    const map = {
+      pendente:     { txt: '⏳', bg: '#fef3c7', cor: '#92400e' },
+      em_tratativa: { txt: '🔧', bg: '#dbeafe', cor: '#1e40af' },
+      resolvido:    { txt: '✅', bg: '#d1fae5', cor: '#047857' },
+      descartado:   { txt: '🚫', bg: '#e5e7eb', cor: '#4b5563' }
+    };
+    return map[status] || map.pendente;
+  }
+
+  // ============================================================
+  // CARREGAMENTO DE DADOS
   // ============================================================
   async function carregarDados() {
     try {
@@ -283,11 +287,35 @@
       document.getElementById('kpiInspecoes').textContent = cInspecoes || 0;
       document.getElementById('kpiInspecoesTrend').textContent = cInspecoes > 0 ? `✅ ${cInspecoes} realizadas` : '📭 Nenhuma ainda';
 
-      const { data: insp } = await db.from('veiculos_inspecoes').select('total_nao_conformes');
-      const totalNC = (insp || []).reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
-      document.getElementById('kpiNC').textContent = totalNC;
-      document.getElementById('kpiNCTrend').textContent = totalNC > 0 ? '⚠️ Atenção necessária' : '✅ Tudo em ordem';
+      // --- KPI de NCs: separa pendentes vs resolvidas ---
+      const { data: insp } = await db.from('veiculos_inspecoes')
+        .select('total_nao_conformes, status_resolucao');
 
+      const ncPendentes = (insp || [])
+        .filter(i => {
+          const s = i.status_resolucao || 'pendente';
+          return s === 'pendente' || s === 'em_tratativa';
+        })
+        .reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
+
+      const ncResolvidas = (insp || [])
+        .filter(i => i.status_resolucao === 'resolvido')
+        .reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
+
+      const ncDescartadas = (insp || [])
+        .filter(i => i.status_resolucao === 'descartado')
+        .reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
+
+      document.getElementById('kpiNC').textContent = ncPendentes;
+      if (ncPendentes > 0) {
+        document.getElementById('kpiNCTrend').textContent = `⚠️ ${ncPendentes} pendentes • ${ncResolvidas} resolvidas`;
+      } else if (ncResolvidas > 0 || ncDescartadas > 0) {
+        document.getElementById('kpiNCTrend').textContent = `✅ Tudo em ordem (${ncResolvidas} resolvidas)`;
+      } else {
+        document.getElementById('kpiNCTrend').textContent = '✅ Tudo em ordem';
+      }
+
+      // --- ÚLTIMAS INSPEÇÕES ---
       if (cInspecoes > 0) {
         const { data: ultimas } = await db.from('veiculos_inspecoes').select('*').order('created_at', { ascending: false }).limit(5);
         if (ultimas && ultimas.length > 0) {
@@ -298,6 +326,10 @@
           ultimas.forEach(i => {
             const pct = parseFloat(i.percentual_conformidade) || 0;
             const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
+            const status = i.status_resolucao || 'pendente';
+            const temNC = (i.total_nao_conformes || 0) > 0;
+            const bs = badgeStatus(status);
+
             const li = document.createElement('li');
             li.style.cssText = 'display:flex; align-items:center; gap:14px; padding: 14px 0; border-bottom: 1px solid var(--border); cursor:pointer; transition: padding 0.2s;';
             li.onclick = () => window.location.href = 'inspecoes.html';
@@ -310,7 +342,10 @@
                 <strong style="display:block;font-size:13.5px;font-weight:700;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${i.veiculo_placa}</strong>
                 <small style="color:var(--text-soft);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block;">${i.checklist_titulo} • ${i.inspetor_nome} • ${new Date(i.created_at).toLocaleDateString('pt-BR')}</small>
               </div>
-              <span class="badge ${cls}">${pct.toFixed(0)}%</span>
+              <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                ${temNC ? `<span style="background:${bs.bg}; color:${bs.cor}; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800;" title="${status}">${bs.txt}</span>` : ''}
+                <span class="badge ${cls}">${pct.toFixed(0)}%</span>
+              </div>
             `;
             lista.appendChild(li);
           });
@@ -339,7 +374,6 @@
   })();
 </script>
 
-<!-- Script para registrar o Service Worker (PWA) -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
