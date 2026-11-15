@@ -6,6 +6,7 @@
 <title>Dashboard | INSPEFROTA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+<!-- ✅ ÍCONES -->
 <link rel="icon" href="favicon.ico" type="image/x-icon">
 <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 <link rel="icon" type="image/png" sizes="192x192" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/icon-192.png">
@@ -14,6 +15,7 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+<!-- Configurações do App (PWA) -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a1f13">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -258,7 +260,7 @@
   });
 
   // ============================================================
-  // BADGE DE STATUS
+  // BADGES DE STATUS
   // ============================================================
   function badgeStatus(status) {
     const map = {
@@ -270,41 +272,58 @@
     return map[status] || map.pendente;
   }
 
+  // Função auxiliar: detecta se a inspeção tem Não Conformidade (por botão ou por texto)
+  function checarTemNC(i) {
+    const ncBotao = (i.total_nao_conformes || 0) > 0;
+    const respostasArr = i.respostas || [];
+    const ncTexto = respostasArr.some(r => r.tipo === 'texto' && r.resposta && r.resposta.trim() !== '');
+    return ncBotao || ncTexto;
+  }
+
   // ============================================================
   // CARREGAMENTO DE DADOS
   // ============================================================
   async function carregarDados() {
     try {
+      // 1. Veículos
       const { count: cVeiculos } = await db.from('veiculos').select('*', { count: 'exact', head: true }).eq('ativo', true);
       document.getElementById('kpiVeiculos').textContent = cVeiculos || 0;
       document.getElementById('kpiVeiculosTrend').textContent = cVeiculos > 0 ? `✅ ${cVeiculos} ativos` : '⚠️ Nenhum cadastrado';
 
+      // 2. Checklists
       const { count: cChecklists } = await db.from('veiculos_checklists').select('*', { count: 'exact', head: true }).eq('ativo', true);
       document.getElementById('kpiChecklists').textContent = cChecklists || 0;
       document.getElementById('kpiChecklistsTrend').textContent = cChecklists > 0 ? `📋 ${cChecklists} modelo${cChecklists > 1 ? 's' : ''}` : '⚠️ Nenhum criado';
 
+      // 3. Inspeções Realizadas
       const { count: cInspecoes } = await db.from('veiculos_inspecoes').select('*', { count: 'exact', head: true });
       document.getElementById('kpiInspecoes').textContent = cInspecoes || 0;
       document.getElementById('kpiInspecoesTrend').textContent = cInspecoes > 0 ? `✅ ${cInspecoes} realizadas` : '📭 Nenhuma ainda';
 
-      // --- KPI de NCs: separa pendentes vs resolvidas ---
+      // 4. NCs Pendentes vs Resolvidas
       const { data: insp } = await db.from('veiculos_inspecoes')
-        .select('total_nao_conformes, status_resolucao');
+        .select('total_nao_conformes, status_resolucao, respostas');
 
-      const ncPendentes = (insp || [])
-        .filter(i => {
-          const s = i.status_resolucao || 'pendente';
-          return s === 'pendente' || s === 'em_tratativa';
-        })
-        .reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
+      let ncPendentes = 0;
+      let ncResolvidas = 0;
+      let ncDescartadas = 0;
 
-      const ncResolvidas = (insp || [])
-        .filter(i => i.status_resolucao === 'resolvido')
-        .reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
+      (insp || []).forEach(i => {
+        const temNC = checarTemNC(i);
+        if (!temNC) return; // Se não tem NC, ignora na contagem
 
-      const ncDescartadas = (insp || [])
-        .filter(i => i.status_resolucao === 'descartado')
-        .reduce((acc, i) => acc + (i.total_nao_conformes || 0), 0);
+        // Se a inspeção tem texto mas o banco diz 0 NCs, conta como 1 para o dashboard
+        const qtdNC = (i.total_nao_conformes || 0) > 0 ? i.total_nao_conformes : 1;
+        const status = i.status_resolucao || 'pendente';
+
+        if (status === 'pendente' || status === 'em_tratativa') {
+          ncPendentes += qtdNC;
+        } else if (status === 'resolvido') {
+          ncResolvidas += qtdNC;
+        } else if (status === 'descartado') {
+          ncDescartadas += qtdNC;
+        }
+      });
 
       document.getElementById('kpiNC').textContent = ncPendentes;
       if (ncPendentes > 0) {
@@ -315,7 +334,7 @@
         document.getElementById('kpiNCTrend').textContent = '✅ Tudo em ordem';
       }
 
-      // --- ÚLTIMAS INSPEÇÕES ---
+      // 5. ÚLTIMAS INSPEÇÕES
       if (cInspecoes > 0) {
         const { data: ultimas } = await db.from('veiculos_inspecoes').select('*').order('created_at', { ascending: false }).limit(5);
         if (ultimas && ultimas.length > 0) {
@@ -324,10 +343,19 @@
           lista.innerHTML = '';
           
           ultimas.forEach(i => {
-            const pct = parseFloat(i.percentual_conformidade) || 0;
-            const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
+            const pct = parseFloat(i.percentual_conformidade);
+            const isRegistro = i.percentual_conformidade === null || i.percentual_conformidade === undefined || isNaN(pct);
+            
+            let badgePct = '';
+            if (isRegistro) {
+              badgePct = `<span style="background:#e0e7ff; color:#3730a3; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; border: 1px solid #c7d2fe;">📝</span>`;
+            } else {
+              const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
+              badgePct = `<span class="badge ${cls}">${pct.toFixed(0)}%</span>`;
+            }
+
             const status = i.status_resolucao || 'pendente';
-            const temNC = (i.total_nao_conformes || 0) > 0;
+            const temNC = checarTemNC(i);
             const bs = badgeStatus(status);
 
             const li = document.createElement('li');
@@ -344,7 +372,7 @@
               </div>
               <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                 ${temNC ? `<span style="background:${bs.bg}; color:${bs.cor}; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800;" title="${status}">${bs.txt}</span>` : ''}
-                <span class="badge ${cls}">${pct.toFixed(0)}%</span>
+                ${badgePct}
               </div>
             `;
             lista.appendChild(li);
@@ -374,6 +402,7 @@
   })();
 </script>
 
+<!-- Script para registrar o Service Worker (PWA) -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
