@@ -15,6 +15,16 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="INSPEFROTA">
 <link rel="apple-touch-icon" href="https://rvtquhqeivrhcdoreghu.supabase.co/storage/v1/object/public/cipa-branding/logo-inspefrot.png">
+
+<style>
+  /* ESTILOS DAS ABAS */
+  .tabs-container { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 0; overflow-x: auto; }
+  .tab-btn { background: transparent; border: none; padding: 14px 20px; font-size: 14px; font-weight: 700; color: var(--text-soft); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s; display: flex; align-items: center; gap: 8px; white-space: nowrap; font-family: inherit; }
+  .tab-btn:hover { color: var(--green-700); }
+  .tab-btn.active { color: var(--green-700); border-bottom-color: var(--green-600); }
+  .tab-badge { background: var(--bg-alt); color: var(--text-soft); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 800; }
+  .tab-btn.active .tab-badge { background: var(--green-100); color: var(--green-700); }
+</style>
 </head>
 <body>
 
@@ -55,13 +65,23 @@
 <main class="main">
   <div class="topbar">
     <h2>Histórico de Inspeções
-      <span>Veja todas as inspeções realizadas na frota</span>
+      <span>Gerencie as pendências e consulte o histórico da frota</span>
     </h2>
     <div class="topbar-actions">
       <button class="btn btn-secondary" onclick="carregarInspecoes()">🔄 Atualizar</button>
       <button class="btn btn-gold" onclick="exportarCSV()">📊 Exportar CSV</button>
       <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
     </div>
+  </div>
+
+  <!-- ABAS -->
+  <div class="tabs-container">
+    <button class="tab-btn active" id="tabPendentes" onclick="mudarAba('pendentes')">
+      ⏳ Pendentes <span class="tab-badge" id="badgePendentes">0</span>
+    </button>
+    <button class="tab-btn" id="tabResolvidas" onclick="mudarAba('resolvidas')">
+      ✅ Histórico / Resolvidas <span class="tab-badge" id="badgeResolvidas">0</span>
+    </button>
   </div>
 
   <!-- FILTROS -->
@@ -74,12 +94,8 @@
         <option value="parcial">⚠️ Média (70-89%)</option>
         <option value="nok">❌ Baixa (&lt;70%)</option>
       </select>
-      <select class="form-control" id="filtroStatus" style="max-width: 230px;" onchange="renderizar()">
-        <option value="">Todos os status</option>
-        <option value="pendente">⏳ Pendente (não conformidades)</option>
-        <option value="em_tratativa">🔧 Em tratativa</option>
-        <option value="resolvido">✅ Resolvido</option>
-        <option value="descartado">🚫 Descartado</option>
+      <select class="form-control" id="filtroStatus" style="max-width: 230px; display:none;" onchange="renderizar()">
+        <!-- Filtro de status agora é controlado pelas abas -->
       </select>
     </div>
   </div>
@@ -197,6 +213,9 @@
   let inspecaoSelecionada = null;
   let inspecaoParaExcluir = null;
   let inspecaoParaResolver = null;
+  
+  // Variável que controla a aba atual
+  let abaAtual = 'pendentes'; 
 
   let toastTimer;
   function mostrarToast(msg, tipo = '') {
@@ -234,6 +253,20 @@
   }
 
   // ============================================================
+  // LÓGICA DE ABAS
+  // ============================================================
+  function mudarAba(aba) {
+    abaAtual = aba;
+    
+    // Atualiza botões
+    document.getElementById('tabPendentes').classList.toggle('active', aba === 'pendentes');
+    document.getElementById('tabResolvidas').classList.toggle('active', aba === 'resolvidas');
+    
+    // Atualiza tabela
+    renderizar();
+  }
+
+  // ============================================================
   // BADGES DE STATUS DE RESOLUÇÃO
   // ============================================================
   function badgeStatus(status) {
@@ -251,6 +284,20 @@
       const { data, error } = await db.from('veiculos_inspecoes').select('*').order('created_at', { ascending: false });
       if (error) { mostrarToast('❌ ' + error.message, 'error'); esconderLoading(); return; }
       inspecoes = data || [];
+      
+      // Atualiza a contagem das abas
+      let qtdPendentes = 0;
+      let qtdResolvidas = 0;
+      
+      inspecoes.forEach(i => {
+        const status = i.status_resolucao || 'pendente';
+        if (status === 'pendente' || status === 'em_tratativa') qtdPendentes++;
+        else qtdResolvidas++;
+      });
+      
+      document.getElementById('badgePendentes').textContent = qtdPendentes;
+      document.getElementById('badgeResolvidas').textContent = qtdResolvidas;
+
       renderizar();
       esconderLoading();
     } catch (err) {
@@ -270,9 +317,22 @@
   function renderizar() {
     const busca = (document.getElementById('busca').value || '').toLowerCase().trim();
     const filtroRes = document.getElementById('filtroResultado').value;
-    const filtroStatus = document.getElementById('filtroStatus').value;
 
+    // 1. Primeiro, filtra pela ABA selecionada (Pendentes ou Resolvidas)
     let lista = [...inspecoes];
+    if (abaAtual === 'pendentes') {
+      lista = lista.filter(i => {
+        const s = i.status_resolucao || 'pendente';
+        return s === 'pendente' || s === 'em_tratativa';
+      });
+    } else {
+      lista = lista.filter(i => {
+        const s = i.status_resolucao || 'pendente';
+        return s === 'resolvido' || s === 'descartado';
+      });
+    }
+
+    // 2. Aplica a busca de texto
     if (busca) {
       lista = lista.filter(i =>
         (i.veiculo_placa || '').toLowerCase().includes(busca) ||
@@ -280,6 +340,8 @@
         (i.checklist_titulo || '').toLowerCase().includes(busca)
       );
     }
+
+    // 3. Aplica o filtro de resultado (Alta, Média, Baixa)
     if (filtroRes) {
       lista = lista.filter(i => {
         const pct = parseFloat(i.percentual_conformidade) || 0;
@@ -289,16 +351,15 @@
         return true;
       });
     }
-    if (filtroStatus) {
-      lista = lista.filter(i => (i.status_resolucao || 'pendente') === filtroStatus);
-    }
 
     listaFiltrada = lista;
     const tbody = document.getElementById('tabelaInspecoes');
     tbody.innerHTML = '';
 
     if (lista.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--text-soft);">Nenhuma inspeção encontrada.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 40px; color: var(--text-soft);">
+        ${abaAtual === 'pendentes' ? '🎉 Nenhuma pendência encontrada!' : 'Nenhuma inspeção no histórico.'}
+      </td></tr>`;
       return;
     }
 
@@ -526,6 +587,10 @@
       fecharModalResolver();
       mostrarToast('✅ Baixa registrada com sucesso!');
       await carregarInspecoes();
+      
+      // Se deu baixa e está na aba Pendentes, muda automaticamente para Resolvidas? 
+      // Melhor manter na aba atual (Pendentes) e a inspeção "sumir" da lista,
+      // mostrando ao usuário que ela foi tratada.
     } catch (err) {
       console.error(err);
       mostrarToast('❌ ' + err.message, true);
@@ -793,12 +858,14 @@
       if (!logado) return;
       await carregarInspecoes();
 
-      // Lê parâmetro ?status= da URL (vindo do dashboard)
+      // Se a URL tiver parâmetro ?status= (ex: vindo do dashboard), 
+      // já seleciona a aba correta.
       const params = new URLSearchParams(window.location.search);
       const statusParam = params.get('status');
-      if (statusParam) {
-        const sel = document.getElementById('filtroStatus');
-        if (sel) { sel.value = statusParam; renderizar(); }
+      if (statusParam === 'resolvido' || statusParam === 'descartado') {
+        mudarAba('resolvidas');
+      } else if (statusParam === 'pendente' || statusParam === 'em_tratativa') {
+        mudarAba('pendentes');
       }
     } catch (err) {
       console.error(err);
