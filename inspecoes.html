@@ -259,6 +259,14 @@
     }
   }
 
+  // Função auxiliar: detecta se a inspeção tem Não Conformidade (por botão ou por texto)
+  function checarTemNC(i) {
+    const ncBotao = (i.total_nao_conformes || 0) > 0;
+    const respostasArr = i.respostas || [];
+    const ncTexto = respostasArr.some(r => r.tipo === 'texto' && r.resposta && r.resposta.trim() !== '');
+    return ncBotao || ncTexto;
+  }
+
   function renderizar() {
     const busca = (document.getElementById('busca').value || '').toLowerCase().trim();
     const filtroRes = document.getElementById('filtroResultado').value;
@@ -295,11 +303,20 @@
     }
 
     lista.forEach(i => {
-      const pct = parseFloat(i.percentual_conformidade) || 0;
-      const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
+      const pct = parseFloat(i.percentual_conformidade);
+      const isRegistro = i.percentual_conformidade === null || i.percentual_conformidade === undefined || isNaN(pct);
+      
+      let badgeHtml = '';
+      if (isRegistro) {
+        badgeHtml = `<span style="background:#e0e7ff; color:#3730a3; padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 800; border: 1px solid #c7d2fe; white-space: nowrap;">📝 Registro</span>`;
+      } else {
+        const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
+        badgeHtml = `<span class="badge ${cls}">${pct.toFixed(0)}%</span>`;
+      }
+
       const temFotos = i.fotos && i.fotos.length > 0 ? `📸 ${i.fotos.length}` : '';
       const status = i.status_resolucao || 'pendente';
-      const temNC = (i.total_nao_conformes || 0) > 0;
+      const temNC = checarTemNC(i);
       const bst = badgeStatus(status);
       const podeBaixar = temNC && status !== 'resolvido' && status !== 'descartado';
 
@@ -310,7 +327,7 @@
         <td>${i.checklist_titulo} <span style="font-size:10px; color:var(--info); font-weight:700; margin-left:5px;">${temFotos}</span></td>
         <td>${i.inspetor_nome}</td>
         <td>
-          <span class="badge ${cls}">${pct.toFixed(0)}%</span>
+          ${badgeHtml}
           ${temNC ? `<span style="display:inline-block; margin-left:6px; background:${bst.bg}; color:${bst.cor}; padding: 4px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 800; white-space: nowrap;">${bst.txt}</span>` : ''}
         </td>
         <td>
@@ -377,12 +394,22 @@
       `;
     }
 
-    const pct = parseFloat(i.percentual_conformidade) || 0;
-    const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
-    const status = i.status_resolucao || 'pendente';
-    const temNC = (i.total_nao_conformes || 0) > 0;
+    const pct = parseFloat(i.percentual_conformidade);
+    const isRegistro = i.percentual_conformidade === null || i.percentual_conformidade === undefined || isNaN(pct);
+    
+    // Cria a badge de resultado para o topo do modal
+    let resultadoHtml = '';
+    if (isRegistro) {
+      resultadoHtml = `<span style="background:#e0e7ff; color:#3730a3; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; margin-right:8px;">📝 Registro</span>`;
+    } else {
+      const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
+      resultadoHtml = `<span class="badge ${cls}" style="margin-right:8px;">${pct.toFixed(1)}%</span>`;
+    }
 
-    // Card de tratativa (só se houver NC)
+    const status = i.status_resolucao || 'pendente';
+    const temNC = checarTemNC(i);
+
+    // Card de tratativa (se houver NC)
     let tratativaHtml = '';
     if (temNC) {
       const mapTrat = {
@@ -427,7 +454,7 @@
       <div style="display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13.5px;">
         <strong style="min-width:120px; color:var(--text-soft); font-size:12px; text-transform:uppercase;">Resultado</strong>
         <div>
-          <span class="badge ${cls}" style="margin-right:8px;">${pct.toFixed(1)}%</span>
+          ${resultadoHtml}
           <span style="color:var(--text-soft); font-size:12.5px;">${i.total_conformes || 0} conformes • ${i.total_nao_conformes || 0} não conformes • ${i.total_itens || 0} itens</span>
         </div>
       </div>
@@ -487,7 +514,6 @@
       const { error } = await db.from('veiculos_inspecoes').update(update).eq('id', inspecaoParaResolver.id);
       if (error) throw error;
 
-      // Registra histórico (se a tabela existir)
       try {
         await db.from('veiculos_inspecoes_historico').insert([{
           inspecao_id: Number(inspecaoParaResolver.id),
@@ -621,16 +647,22 @@
     y += 5;
     doc.text(`Local: ${d.local_inspecionado || '-'}`, margin, y); 
     
-    const pct = parseFloat(d.percentual_conformidade) || 0;
+    const pct = parseFloat(d.percentual_conformidade);
+    const isRegistro = d.percentual_conformidade === null || d.percentual_conformidade === undefined || isNaN(pct);
+    
     doc.setFillColor(240, 244, 248);
     doc.rect(120, y - 4, 80, 6, 'F');
     doc.setFontSize(9);
-    doc.text(`Conformidade: ${pct.toFixed(1)}% | ${d.total_conformes} OK | ${d.total_nao_conformes} NC`, 160, y + 0.5, { align: 'center' });
+    
+    const txtResumo = isRegistro 
+      ? `Registro | ${d.total_conformes} OK | ${d.total_nao_conformes} NC`
+      : `Conformidade: ${pct.toFixed(1)}% | ${d.total_conformes} OK | ${d.total_nao_conformes} NC`;
+
+    doc.text(txtResumo, 160, y + 0.5, { align: 'center' });
     y += 10;
 
-    // Status de resolução no PDF
     const status = d.status_resolucao || 'pendente';
-    if (status !== 'pendente' && (d.total_nao_conformes || 0) > 0) {
+    if (status !== 'pendente' && checarTemNC(d)) {
       const labels = {
         em_tratativa: { txt: 'EM TRATATIVA', rgb: [30, 64, 175], bg: [219, 234, 254] },
         resolvido:    { txt: 'RESOLVIDO', rgb: [4, 120, 87], bg: [209, 250, 229] },
@@ -724,19 +756,23 @@
     if (listaFiltrada.length === 0) { mostrarToast('⚠️ Nada para exportar', 'error'); return; }
     const header = ['Data', 'Veículo', 'Checklist', 'Inspetor', 'Local', 'Conformes', 'Não Conformes', 'Conformidade %', 'Status Tratativa', 'Responsável', 'Data Baixa'];
     const statusLabel = { pendente: 'Pendente', em_tratativa: 'Em tratativa', resolvido: 'Resolvido', descartado: 'Descartado' };
-    const rows = listaFiltrada.map(i => [
-      formatarData(i.created_at),
-      i.veiculo_placa || '',
-      i.checklist_titulo || '',
-      i.inspetor_nome || '',
-      i.local_inspecionado || '',
-      i.total_conformes || 0,
-      i.total_nao_conformes || 0,
-      i.percentual_conformidade || 0,
-      statusLabel[i.status_resolucao || 'pendente'],
-      i.resolvido_por || '',
-      i.resolvido_em ? formatarData(i.resolvido_em) : ''
-    ]);
+    const rows = listaFiltrada.map(i => {
+      const pct = parseFloat(i.percentual_conformidade);
+      const isRegistro = i.percentual_conformidade === null || i.percentual_conformidade === undefined || isNaN(pct);
+      return [
+        formatarData(i.created_at),
+        i.veiculo_placa || '',
+        i.checklist_titulo || '',
+        i.inspetor_nome || '',
+        i.local_inspecionado || '',
+        i.total_conformes || 0,
+        i.total_nao_conformes || 0,
+        isRegistro ? 'Registro' : `${pct.toFixed(0)}%`,
+        statusLabel[i.status_resolucao || 'pendente'],
+        i.resolvido_por || '',
+        i.resolvido_em ? formatarData(i.resolvido_em) : ''
+      ];
+    });
     const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
     const link = document.createElement('a');
