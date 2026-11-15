@@ -9,7 +9,6 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<!-- Configurações do App no Celular (PWA) -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0a1f13">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -75,6 +74,13 @@
         <option value="parcial">⚠️ Média (70-89%)</option>
         <option value="nok">❌ Baixa (&lt;70%)</option>
       </select>
+      <select class="form-control" id="filtroStatus" style="max-width: 230px;" onchange="renderizar()">
+        <option value="">Todos os status</option>
+        <option value="pendente">⏳ Pendente (não conformidades)</option>
+        <option value="em_tratativa">🔧 Em tratativa</option>
+        <option value="resolvido">✅ Resolvido</option>
+        <option value="descartado">🚫 Descartado</option>
+      </select>
     </div>
   </div>
 
@@ -107,6 +113,49 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="fecharModal()">Fechar</button>
       <button class="btn btn-gold" onclick="exportarPDFIndividual()">📄 Baixar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DAR BAIXA -->
+<div class="modal-overlay" id="modalResolver">
+  <div class="modal" style="max-width: 640px;">
+    <div class="modal-header" style="background: linear-gradient(135deg, #ecfdf5, #fff);">
+      <h3 style="color: #047857; display:flex; align-items:center; gap:8px;">✅ Dar Baixa na Inspeção</h3>
+      <button class="close-btn" onclick="fecharModalResolver()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background: var(--bg); padding: 14px; border-radius: 10px; margin-bottom: 18px;">
+        <div style="font-size: 12px; color: var(--text-soft); text-transform: uppercase; font-weight: 700;">Veículo</div>
+        <div style="font-size: 15px; font-weight: 800;" id="resolverPlaca">—</div>
+        <div style="font-size: 12px; color: var(--text-soft); margin-top: 4px;">
+          Inspeção realizada em <strong id="resolverData">—</strong> • 
+          <strong id="resolverNC">0</strong> não conformidade(s)
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Como foi tratado? <span style="color:var(--danger)">*</span></label>
+        <select class="form-control" id="resolverAcao">
+          <option value="resolvido">✅ Problema corrigido (não conformidade resolvida)</option>
+          <option value="em_tratativa">🔧 Em tratativa (ordem de serviço aberta)</option>
+          <option value="descartado">🚫 Descartado (falso positivo / não se aplica)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Quem está tratando / responsável</label>
+        <input type="text" class="form-control" id="resolverPor" placeholder="Ex: João (Mecânica), Maria (Gestora)">
+      </div>
+
+      <div class="form-group">
+        <label>Observações da tratativa</label>
+        <textarea class="form-control" id="resolverObs" rows="4" placeholder="Ex: Pneu dianteiro esquerdo trocado na oficina XYZ. Ordem de serviço #1234." style="resize: vertical; min-height: 80px; font-family: inherit;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="fecharModalResolver()">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarResolver" onclick="confirmarResolver()">💾 Salvar Baixa</button>
     </div>
   </div>
 </div>
@@ -147,6 +196,7 @@
   let listaFiltrada = [];
   let inspecaoSelecionada = null;
   let inspecaoParaExcluir = null;
+  let inspecaoParaResolver = null;
 
   let toastTimer;
   function mostrarToast(msg, tipo = '') {
@@ -183,6 +233,19 @@
     return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   }
 
+  // ============================================================
+  // BADGES DE STATUS DE RESOLUÇÃO
+  // ============================================================
+  function badgeStatus(status) {
+    const map = {
+      pendente:     { txt: '⏳ Pendente',   bg: '#fef3c7', cor: '#92400e' },
+      em_tratativa: { txt: '🔧 Tratativa',  bg: '#dbeafe', cor: '#1e40af' },
+      resolvido:    { txt: '✅ Resolvido',  bg: '#d1fae5', cor: '#047857' },
+      descartado:   { txt: '🚫 Descartado', bg: '#e5e7eb', cor: '#4b5563' }
+    };
+    return map[status] || map.pendente;
+  }
+
   async function carregarInspecoes() {
     try {
       const { data, error } = await db.from('veiculos_inspecoes').select('*').order('created_at', { ascending: false });
@@ -199,6 +262,7 @@
   function renderizar() {
     const busca = (document.getElementById('busca').value || '').toLowerCase().trim();
     const filtroRes = document.getElementById('filtroResultado').value;
+    const filtroStatus = document.getElementById('filtroStatus').value;
 
     let lista = [...inspecoes];
     if (busca) {
@@ -217,6 +281,9 @@
         return true;
       });
     }
+    if (filtroStatus) {
+      lista = lista.filter(i => (i.status_resolucao || 'pendente') === filtroStatus);
+    }
 
     listaFiltrada = lista;
     const tbody = document.getElementById('tabelaInspecoes');
@@ -231,18 +298,26 @@
       const pct = parseFloat(i.percentual_conformidade) || 0;
       const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
       const temFotos = i.fotos && i.fotos.length > 0 ? `📸 ${i.fotos.length}` : '';
-      
+      const status = i.status_resolucao || 'pendente';
+      const temNC = (i.total_nao_conformes || 0) > 0;
+      const bst = badgeStatus(status);
+      const podeBaixar = temNC && status !== 'resolvido' && status !== 'descartado';
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td><strong>${formatarData(i.created_at)}</strong></td>
         <td><strong>${i.veiculo_placa}</strong></td>
         <td>${i.checklist_titulo} <span style="font-size:10px; color:var(--info); font-weight:700; margin-left:5px;">${temFotos}</span></td>
         <td>${i.inspetor_nome}</td>
-        <td><span class="badge ${cls}">${pct.toFixed(0)}%</span></td>
         <td>
-          <div style="display:flex; gap:6px; justify-content:flex-end;">
+          <span class="badge ${cls}">${pct.toFixed(0)}%</span>
+          ${temNC ? `<span style="display:inline-block; margin-left:6px; background:${bst.bg}; color:${bst.cor}; padding: 4px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 800; white-space: nowrap;">${bst.txt}</span>` : ''}
+        </td>
+        <td>
+          <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
             <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirDetalhes('${i.id}')">👁️ Ver</button>
             <button class="btn btn-gold" style="padding: 6px 12px; font-size: 12px;" onclick="baixarPDFPorId('${i.id}')">📄 PDF</button>
+            ${podeBaixar ? `<button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModalResolver('${i.id}')">✅ Dar Baixa</button>` : ''}
             <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModalExcluir('${i.id}')">🗑️</button>
           </div>
         </td>
@@ -251,6 +326,9 @@
     });
   }
 
+  // ============================================================
+  // MODAL DETALHES
+  // ============================================================
   function abrirDetalhes(id) {
     const i = inspecoes.find(x => String(x.id) === String(id));
     if (!i) return;
@@ -301,6 +379,29 @@
 
     const pct = parseFloat(i.percentual_conformidade) || 0;
     const cls = pct >= 90 ? 'ok' : pct >= 70 ? 'parcial' : 'nok';
+    const status = i.status_resolucao || 'pendente';
+    const temNC = (i.total_nao_conformes || 0) > 0;
+
+    // Card de tratativa (só se houver NC)
+    let tratativaHtml = '';
+    if (temNC) {
+      const mapTrat = {
+        pendente:     { cor: '#f59e0b', bg: '#fef9e7', borda: '#f59e0b', titulo: '⏳ PENDENTE DE TRATATIVA' },
+        em_tratativa: { cor: '#1e40af', bg: '#eff6ff', borda: '#3b82f6', titulo: '🔧 EM TRATATIVA' },
+        resolvido:    { cor: '#047857', bg: '#ecfdf5', borda: '#10b981', titulo: '✅ TRATATIVA CONCLUÍDA' },
+        descartado:   { cor: '#4b5563', bg: '#f3f4f6', borda: '#9ca3af', titulo: '🚫 DESCARTADO' }
+      };
+      const t = mapTrat[status] || mapTrat.pendente;
+      tratativaHtml = `
+        <div style="margin-top: 20px; padding: 16px; background: ${t.bg}; border-radius: 12px; border: 1.5px solid ${t.borda};">
+          <h4 style="font-size: 13px; font-weight: 800; margin-bottom: 8px; color: ${t.cor};">${t.titulo}</h4>
+          ${i.resolvido_por ? `<p style="font-size:12.5px; margin-bottom:4px;"><strong>Responsável:</strong> ${i.resolvido_por}</p>` : ''}
+          ${i.resolvido_em ? `<p style="font-size:12.5px; margin-bottom:4px;"><strong>Data da baixa:</strong> ${formatarData(i.resolvido_em)}</p>` : ''}
+          ${i.observacao_resolucao ? `<p style="font-size:12.5px; margin-top:8px; padding:10px; background:#fff; border-radius:8px; line-height:1.5; white-space:pre-wrap;">${i.observacao_resolucao}</p>` : ''}
+          ${(status === 'pendente' || status === 'em_tratativa') ? `<button class="btn btn-primary" style="margin-top:12px; width:100%; justify-content:center;" onclick="fecharModal(); abrirModalResolver('${i.id}')">✅ Dar Baixa nesta Inspeção</button>` : ''}
+        </div>
+      `;
+    }
 
     document.getElementById('modalBody').innerHTML = `
       <div style="display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13.5px;">
@@ -330,6 +431,7 @@
           <span style="color:var(--text-soft); font-size:12.5px;">${i.total_conformes || 0} conformes • ${i.total_nao_conformes || 0} não conformes • ${i.total_itens || 0} itens</span>
         </div>
       </div>
+      ${tratativaHtml}
       ${fotosHtml}
       <h4 style="margin-top:24px; margin-bottom:12px; font-size:15px; font-weight:800;">📝 Respostas (${respostas.length})</h4>
       ${respostasHtml || '<p style="color:var(--text-soft); text-align:center; padding:20px;">Nenhuma resposta registrada.</p>'}
@@ -343,6 +445,72 @@
     inspecaoSelecionada = null;
   }
 
+  // ============================================================
+  // DAR BAIXA
+  // ============================================================
+  function abrirModalResolver(id) {
+    const i = inspecoes.find(x => String(x.id) === String(id));
+    if (!i) return;
+    inspecaoParaResolver = i;
+    document.getElementById('resolverPlaca').textContent = i.veiculo_placa;
+    document.getElementById('resolverData').textContent = formatarData(i.created_at);
+    document.getElementById('resolverNC').textContent = i.total_nao_conformes || 0;
+    document.getElementById('resolverAcao').value = (i.status_resolucao === 'em_tratativa') ? 'em_tratativa' : 'resolvido';
+    document.getElementById('resolverPor').value = i.resolvido_por || '';
+    document.getElementById('resolverObs').value = i.observacao_resolucao || '';
+    document.getElementById('modalResolver').classList.add('open');
+  }
+
+  function fecharModalResolver() {
+    document.getElementById('modalResolver').classList.remove('open');
+    inspecaoParaResolver = null;
+  }
+
+  async function confirmarResolver() {
+    if (!inspecaoParaResolver) return;
+    const btn = document.getElementById('btnConfirmarResolver');
+    const acao = document.getElementById('resolverAcao').value;
+    const por = document.getElementById('resolverPor').value.trim();
+    const obs = document.getElementById('resolverObs').value.trim();
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Salvando...';
+
+    try {
+      const update = {
+        status_resolucao: acao,
+        resolvido_por: por || '—',
+        observacao_resolucao: obs,
+        resolvido_em: (acao === 'resolvido' || acao === 'descartado') ? new Date().toISOString() : null
+      };
+
+      const { error } = await db.from('veiculos_inspecoes').update(update).eq('id', inspecaoParaResolver.id);
+      if (error) throw error;
+
+      // Registra histórico (se a tabela existir)
+      try {
+        await db.from('veiculos_inspecoes_historico').insert([{
+          inspecao_id: Number(inspecaoParaResolver.id),
+          acao: acao,
+          detalhes: obs,
+          usuario: por || 'sistema'
+        }]);
+      } catch (e) { console.warn('Histórico não registrado:', e); }
+
+      fecharModalResolver();
+      mostrarToast('✅ Baixa registrada com sucesso!');
+      await carregarInspecoes();
+    } catch (err) {
+      console.error(err);
+      mostrarToast('❌ ' + err.message, true);
+      btn.disabled = false;
+      btn.textContent = '💾 Salvar Baixa';
+    }
+  }
+
+  // ============================================================
+  // EXCLUIR
+  // ============================================================
   function abrirModalExcluir(id) {
     const i = inspecoes.find(x => String(x.id) === String(id));
     if (!i) return;
@@ -396,14 +564,14 @@
     }
   }
 
+  // ============================================================
+  // PDF
+  // ============================================================
   function baixarPDFPorId(id) {
     const i = inspecoes.find(x => String(x.id) === String(id));
     if (i) { inspecaoSelecionada = i; exportarPDFIndividual(); }
   }
 
-  // ============================================================
-  // 📄 GERAR PDF (MESMA FUNÇÃO DO INSPETOR)
-  // ============================================================
   async function loadImageAsDataURL(url) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -434,7 +602,6 @@
     const margin = 10;
     let y = 0;
 
-    // === CABEÇALHO ===
     doc.setFillColor(10, 31, 19);
     doc.rect(0, 0, 210, 18, 'F');
     doc.setTextColor(255, 255, 255);
@@ -461,7 +628,36 @@
     doc.text(`Conformidade: ${pct.toFixed(1)}% | ${d.total_conformes} OK | ${d.total_nao_conformes} NC`, 160, y + 0.5, { align: 'center' });
     y += 10;
 
-    // === ITENS ===
+    // Status de resolução no PDF
+    const status = d.status_resolucao || 'pendente';
+    if (status !== 'pendente' && (d.total_nao_conformes || 0) > 0) {
+      const labels = {
+        em_tratativa: { txt: 'EM TRATATIVA', rgb: [30, 64, 175], bg: [219, 234, 254] },
+        resolvido:    { txt: 'RESOLVIDO', rgb: [4, 120, 87], bg: [209, 250, 229] },
+        descartado:   { txt: 'DESCARTADO', rgb: [75, 85, 99], bg: [229, 231, 235] }
+      };
+      const lb = labels[status];
+      if (lb) {
+        doc.setFillColor(...lb.bg);
+        doc.rect(margin, y - 3, 190, 7, 'F');
+        doc.setTextColor(...lb.rgb);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`STATUS DA TRATATIVA: ${lb.txt}`, margin + 3, y + 1.5);
+        if (d.resolvido_por) doc.text(`Por: ${d.resolvido_por}`, 160, y + 1.5, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        y += 10;
+      }
+      if (d.observacao_resolucao) {
+        const obsLinhas = doc.splitTextToSize(`Obs: ${d.observacao_resolucao}`, 185);
+        if (y + obsLinhas.length * 4 + 4 > 280) { doc.addPage(); y = 15; }
+        doc.setTextColor(60, 60, 60);
+        doc.setFontSize(8);
+        doc.text(obsLinhas, margin + 2, y);
+        y += obsLinhas.length * 4 + 4;
+      }
+    }
+
     const respostas = d.respostas || [];
     respostas.forEach((r, idx) => {
       const v = r.resposta;
@@ -491,7 +687,6 @@
       }
     });
 
-    // === FOTOS ===
     if (d.fotos && d.fotos.length > 0) {
       if (y + 30 > 280) { doc.addPage(); y = 15; } 
       else { y += 4; }
@@ -527,7 +722,8 @@
 
   function exportarCSV() {
     if (listaFiltrada.length === 0) { mostrarToast('⚠️ Nada para exportar', 'error'); return; }
-    const header = ['Data', 'Veículo', 'Checklist', 'Inspetor', 'Local', 'Conformes', 'Não Conformes', 'Conformidade %'];
+    const header = ['Data', 'Veículo', 'Checklist', 'Inspetor', 'Local', 'Conformes', 'Não Conformes', 'Conformidade %', 'Status Tratativa', 'Responsável', 'Data Baixa'];
+    const statusLabel = { pendente: 'Pendente', em_tratativa: 'Em tratativa', resolvido: 'Resolvido', descartado: 'Descartado' };
     const rows = listaFiltrada.map(i => [
       formatarData(i.created_at),
       i.veiculo_placa || '',
@@ -536,7 +732,10 @@
       i.local_inspecionado || '',
       i.total_conformes || 0,
       i.total_nao_conformes || 0,
-      i.percentual_conformidade || 0
+      i.percentual_conformidade || 0,
+      statusLabel[i.status_resolucao || 'pendente'],
+      i.resolvido_por || '',
+      i.resolvido_em ? formatarData(i.resolvido_em) : ''
     ]);
     const csv = [header, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
@@ -547,7 +746,9 @@
     mostrarToast('📊 CSV exportado!');
   }
 
+  // Fechar modais ao clicar fora
   document.getElementById('modalDetalhes').addEventListener('click', e => { if (e.target.id === 'modalDetalhes') fecharModal(); });
+  document.getElementById('modalResolver').addEventListener('click', e => { if (e.target.id === 'modalResolver') fecharModalResolver(); });
   document.getElementById('modalExcluir').addEventListener('click', e => { if (e.target.id === 'modalExcluir') fecharModalExcluir(); });
 
   (async () => {
@@ -555,6 +756,14 @@
       const logado = await verificarLogin();
       if (!logado) return;
       await carregarInspecoes();
+
+      // Lê parâmetro ?status= da URL (vindo do dashboard)
+      const params = new URLSearchParams(window.location.search);
+      const statusParam = params.get('status');
+      if (statusParam) {
+        const sel = document.getElementById('filtroStatus');
+        if (sel) { sel.value = statusParam; renderizar(); }
+      }
     } catch (err) {
       console.error(err);
       esconderLoading();
@@ -563,7 +772,6 @@
   })();
 </script>
 
-<!-- Script para registrar o Service Worker (PWA) -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
