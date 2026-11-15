@@ -24,6 +24,10 @@
   .tab-btn.active { color: var(--green-700); border-bottom-color: var(--green-600); }
   .tab-badge { background: var(--bg-alt); color: var(--text-soft); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 800; }
   .tab-btn.active .tab-badge { background: var(--green-100); color: var(--green-700); }
+
+  /* BOTÃO REVERTER */
+  .btn-reverter { background: #fef3c7; color: #92400e; border: 1.5px solid #fcd34d; padding: 6px 12px; font-size: 12px; border-radius: 11px; cursor: pointer; font-weight: 600; transition: all 0.22s; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
+  .btn-reverter:hover { background: #f59e0b; color: #fff; border-color: #f59e0b; transform: translateY(-2px); }
 </style>
 </head>
 <body>
@@ -93,9 +97,6 @@
         <option value="ok">✅ Alta conformidade (≥90%)</option>
         <option value="parcial">⚠️ Média (70-89%)</option>
         <option value="nok">❌ Baixa (&lt;70%)</option>
-      </select>
-      <select class="form-control" id="filtroStatus" style="max-width: 230px; display:none;" onchange="renderizar()">
-        <!-- Filtro de status agora é controlado pelas abas -->
       </select>
     </div>
   </div>
@@ -214,7 +215,6 @@
   let inspecaoParaExcluir = null;
   let inspecaoParaResolver = null;
   
-  // Variável que controla a aba atual
   let abaAtual = 'pendentes'; 
 
   let toastTimer;
@@ -257,17 +257,13 @@
   // ============================================================
   function mudarAba(aba) {
     abaAtual = aba;
-    
-    // Atualiza botões
     document.getElementById('tabPendentes').classList.toggle('active', aba === 'pendentes');
     document.getElementById('tabResolvidas').classList.toggle('active', aba === 'resolvidas');
-    
-    // Atualiza tabela
     renderizar();
   }
 
   // ============================================================
-  // BADGES DE STATUS DE RESOLUÇÃO
+  // BADGES DE STATUS
   // ============================================================
   function badgeStatus(status) {
     const map = {
@@ -285,7 +281,6 @@
       if (error) { mostrarToast('❌ ' + error.message, 'error'); esconderLoading(); return; }
       inspecoes = data || [];
       
-      // Atualiza a contagem das abas
       let qtdPendentes = 0;
       let qtdResolvidas = 0;
       
@@ -306,7 +301,6 @@
     }
   }
 
-  // Função auxiliar: detecta se a inspeção tem Não Conformidade (por botão ou por texto)
   function checarTemNC(i) {
     const ncBotao = (i.total_nao_conformes || 0) > 0;
     const respostasArr = i.respostas || [];
@@ -318,8 +312,9 @@
     const busca = (document.getElementById('busca').value || '').toLowerCase().trim();
     const filtroRes = document.getElementById('filtroResultado').value;
 
-    // 1. Primeiro, filtra pela ABA selecionada (Pendentes ou Resolvidas)
     let lista = [...inspecoes];
+    
+    // Filtro das Abas
     if (abaAtual === 'pendentes') {
       lista = lista.filter(i => {
         const s = i.status_resolucao || 'pendente';
@@ -332,7 +327,6 @@
       });
     }
 
-    // 2. Aplica a busca de texto
     if (busca) {
       lista = lista.filter(i =>
         (i.veiculo_placa || '').toLowerCase().includes(busca) ||
@@ -341,7 +335,6 @@
       );
     }
 
-    // 3. Aplica o filtro de resultado (Alta, Média, Baixa)
     if (filtroRes) {
       lista = lista.filter(i => {
         const pct = parseFloat(i.percentual_conformidade) || 0;
@@ -380,6 +373,9 @@
       const temNC = checarTemNC(i);
       const bst = badgeStatus(status);
       const podeBaixar = temNC && status !== 'resolvido' && status !== 'descartado';
+      
+      // Regra para mostrar o botão de Reverter (só no histórico)
+      const podeReverter = (status === 'resolvido' || status === 'descartado') && temNC;
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
@@ -395,13 +391,50 @@
           <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
             <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirDetalhes('${i.id}')">👁️ Ver</button>
             <button class="btn btn-gold" style="padding: 6px 12px; font-size: 12px;" onclick="baixarPDFPorId('${i.id}')">📄 PDF</button>
+            
             ${podeBaixar ? `<button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModalResolver('${i.id}')">✅ Dar Baixa</button>` : ''}
+            
+            ${podeReverter ? `<button class="btn-reverter" onclick="reverterBaixa('${i.id}')" title="Desfazer Baixa (Voltar para Pendente)">🔄 Reverter</button>` : ''}
+            
             <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" onclick="abrirModalExcluir('${i.id}')">🗑️</button>
           </div>
         </td>
       `;
       tbody.appendChild(tr);
     });
+  }
+
+  // ============================================================
+  // REVERTER BAIXA (NOVO)
+  // ============================================================
+  async function reverterBaixa(id) {
+    if (!confirm('🔄 Deseja realmente reverter a baixa?\n\nEsta inspeção voltará para a aba de "Pendentes".')) return;
+
+    try {
+      const { error } = await db.from('veiculos_inspecoes').update({
+        status_resolucao: 'pendente',
+        resolvido_por: null,
+        resolvido_em: null,
+        observacao_resolucao: null
+      }).eq('id', id);
+      
+      if (error) throw error;
+
+      try {
+        await db.from('veiculos_inspecoes_historico').insert([{
+          inspecao_id: Number(id),
+          acao: 'reversao_baixa',
+          detalhes: 'Baixa revertida pelo gestor. Inspeção voltou para pendente.',
+          usuario: 'Gestor'
+        }]);
+      } catch (e) { console.warn('Histórico não registrado:', e); }
+
+      mostrarToast('🔄 Baixa revertida! A inspeção está pendente novamente.');
+      await carregarInspecoes();
+    } catch (err) {
+      console.error(err);
+      mostrarToast('❌ ' + err.message, true);
+    }
   }
 
   // ============================================================
@@ -458,7 +491,6 @@
     const pct = parseFloat(i.percentual_conformidade);
     const isRegistro = i.percentual_conformidade === null || i.percentual_conformidade === undefined || isNaN(pct);
     
-    // Cria a badge de resultado para o topo do modal
     let resultadoHtml = '';
     if (isRegistro) {
       resultadoHtml = `<span style="background:#e0e7ff; color:#3730a3; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 800; margin-right:8px;">📝 Registro</span>`;
@@ -470,7 +502,6 @@
     const status = i.status_resolucao || 'pendente';
     const temNC = checarTemNC(i);
 
-    // Card de tratativa (se houver NC)
     let tratativaHtml = '';
     if (temNC) {
       const mapTrat = {
@@ -480,6 +511,12 @@
         descartado:   { cor: '#4b5563', bg: '#f3f4f6', borda: '#9ca3af', titulo: '🚫 DESCARTADO' }
       };
       const t = mapTrat[status] || mapTrat.pendente;
+      
+      const podeReverterModal = (status === 'resolvido' || status === 'descartado');
+      const btnReverterModal = podeReverterModal 
+        ? `<button class="btn-reverter" style="margin-top:12px; width:100%; justify-content:center;" onclick="fecharModal(); reverterBaixa('${i.id}')">🔄 Reverter Baixa (Voltar p/ Pendente)</button>` 
+        : '';
+
       tratativaHtml = `
         <div style="margin-top: 20px; padding: 16px; background: ${t.bg}; border-radius: 12px; border: 1.5px solid ${t.borda};">
           <h4 style="font-size: 13px; font-weight: 800; margin-bottom: 8px; color: ${t.cor};">${t.titulo}</h4>
@@ -487,6 +524,7 @@
           ${i.resolvido_em ? `<p style="font-size:12.5px; margin-bottom:4px;"><strong>Data da baixa:</strong> ${formatarData(i.resolvido_em)}</p>` : ''}
           ${i.observacao_resolucao ? `<p style="font-size:12.5px; margin-top:8px; padding:10px; background:#fff; border-radius:8px; line-height:1.5; white-space:pre-wrap;">${i.observacao_resolucao}</p>` : ''}
           ${(status === 'pendente' || status === 'em_tratativa') ? `<button class="btn btn-primary" style="margin-top:12px; width:100%; justify-content:center;" onclick="fecharModal(); abrirModalResolver('${i.id}')">✅ Dar Baixa nesta Inspeção</button>` : ''}
+          ${btnReverterModal}
         </div>
       `;
     }
@@ -587,10 +625,6 @@
       fecharModalResolver();
       mostrarToast('✅ Baixa registrada com sucesso!');
       await carregarInspecoes();
-      
-      // Se deu baixa e está na aba Pendentes, muda automaticamente para Resolvidas? 
-      // Melhor manter na aba atual (Pendentes) e a inspeção "sumir" da lista,
-      // mostrando ao usuário que ela foi tratada.
     } catch (err) {
       console.error(err);
       mostrarToast('❌ ' + err.message, true);
@@ -858,8 +892,6 @@
       if (!logado) return;
       await carregarInspecoes();
 
-      // Se a URL tiver parâmetro ?status= (ex: vindo do dashboard), 
-      // já seleciona a aba correta.
       const params = new URLSearchParams(window.location.search);
       const statusParam = params.get('status');
       if (statusParam === 'resolvido' || statusParam === 'descartado') {
